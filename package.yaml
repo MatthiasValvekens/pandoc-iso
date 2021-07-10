@@ -1,0 +1,48 @@
+name:                pandoc-iso
+version:             0.1.0.0
+author:              "Matthias Valvekens"
+maintainer:          "dev@mvalvekens.be"
+copyright:           "2021 Matthias Valvekens"
+
+description:         Pandoc-based utils for ISO document formatting
+
+dependencies:
+- base >= 4.7 && < 5
+- hashable >= 1.3
+- unordered-containers >= 0.2.13.0
+- aeson >= 1.5.5.0
+- bytestring >= 0.10.12.0
+- mtl >= 2.2.2
+- transformers
+- text >= 1.2.4.1
+- pandoc-types >= 1.22
+- lens >= 4.9 && <5
+
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
+  exposed-modules:
+    - Text.Pandoc.ISO
+
+executables:
+  pandoc-iso:
+    dependencies:
+      - pandoc-iso
+      - haskeline >= 0.8.1.1
+    main: PandocISO.hs
+    source-dirs: app
+    ghc-options:
+      - -Wall
+
+tests:
+  hasn1-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - pandoc-iso
+    - HUnit
