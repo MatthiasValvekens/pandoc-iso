@@ -30,6 +30,14 @@ data ClauseNum = ClauseNum Int [Int] deriving Eq
 
 type Identifier = T.Text
 
+prependToBlocks :: [Inline] -> [Inline] -> [Block] -> [Block]
+prependToBlocks toPrepend connector blks = case blks of
+    [] -> [Plain toPrepend]
+    (Plain ins:bs) -> (Plain (connected ins):bs)
+    (Para ins:bs) -> (Para (connected ins):bs)
+    blocks -> (Plain toPrepend:blocks)
+    where connected ins = toPrepend ++ connector ++ ins
+
 
 -- | Turn a 'ClauseNum' object into a big-endian list
 clauseAsList :: ClauseNum -> [Int]
@@ -277,15 +285,9 @@ sniffRef blk@(Table attrs tblCapt cs th tb tf) = do
           -- Prepend "Table xx --- " to the table caption
           prependNum num (Caption sh long) = Caption (fmap (tabStr++) sh) long'
             where tabStr' = Str $ "Table " <> T.pack (show num)
-                  tabStr = [tabStr', Space, Str "—", Space ]
-                  long' = case long of
-                    [] -> [Plain [tabStr']] -- no caption at all, so no emdash
-                    -- single plain/para are special-cased
-                    [Plain ins] -> [Plain $ tabStr ++ ins]
-                    [Para ins] -> [Para $ tabStr ++ ins]
-                    blocks -> (Plain tabStr:blocks)
-                    
-                    
+                  emdash = [Space, Str "—", Space ]
+                  tabStr = (tabStr':emdash)
+                  long' = prependToBlocks [tabStr'] emdash long
 
 sniffRef x = return x
 
