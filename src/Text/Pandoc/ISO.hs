@@ -78,6 +78,11 @@ clauseNumText cls = T.intercalate "." nums
     where nums = fmap (T.pack . show) $ clauseAsList cls
 
 
+clauseNumToIdent :: Maybe ClauseNum -> Identifier
+clauseNumToIdent Nothing = "root"
+clauseNumToIdent (Just cls) = T.intercalate "-" nums
+    where nums = fmap (T.pack . show) $ clauseAsList cls
+
 instance Show ClauseNum where
     show = T.unpack . clauseNumText
 
@@ -122,14 +127,20 @@ instance Inlinable Captioned where
 
 type DocRefs = HM.HashMap Identifier
 
+newtype NoteNum = NoteNum (Maybe Int)
+
+instance Inlinable NoteNum where
+    inline (NoteNum Nothing) = [Str "NOTE"]
+    inline (NoteNum (Just n)) = [Str $ "NOTE " <> T.pack (show n)]
 
 data DocRefStore = DocRefStore
     { _clauseRefs :: DocRefs ClauseInfo
-    , _tableRefs :: DocRefs Captioned }
+    , _tableRefs :: DocRefs Captioned
+    , _noteRefs :: DocRefs NoteNum }
 
 
 initRefStore :: DocRefStore
-initRefStore = DocRefStore HM.empty HM.empty
+initRefStore = DocRefStore HM.empty HM.empty HM.empty
 
 
 clauseRefs :: Lens' DocRefStore (DocRefs ClauseInfo)
@@ -140,10 +151,15 @@ tableRefs :: Lens' DocRefStore (DocRefs Captioned)
 tableRefs wrap ctx = doSet <$> wrap (_tableRefs ctx)
     where doSet x = ctx { _tableRefs = x }
 
+noteRefs :: Lens' DocRefStore (DocRefs NoteNum)
+noteRefs wrap ctx = doSet <$> wrap (_noteRefs ctx)
+    where doSet x = ctx { _noteRefs = x }
+
 
 data RefBuildingState = RefBuildingState
     { _currentRefs :: DocRefStore
     , _currentClause :: Maybe ClauseNum
+    , _currentNotes :: [T.Text]
     , _lastTable :: Int }
 
 
@@ -151,6 +167,7 @@ initRefBuildingState :: RefBuildingState
 initRefBuildingState = RefBuildingState
     { _currentRefs = initRefStore 
     , _currentClause = Nothing
+    , _currentNotes = []
     , _lastTable = 0 }
 
 
@@ -161,6 +178,10 @@ currentRefs wrap ctx = doSet <$> wrap (_currentRefs ctx)
 currentClause :: Lens' RefBuildingState (Maybe ClauseNum)
 currentClause wrap ctx = doSet <$> wrap (_currentClause ctx)
     where doSet x = ctx { _currentClause = x }
+
+currentNotes :: Lens' RefBuildingState [T.Text]
+currentNotes wrap ctx = doSet <$> wrap (_currentNotes ctx)
+    where doSet x = ctx { _currentNotes = x }
 
 lastTable :: Lens' RefBuildingState Int
 lastTable wrap ctx = doSet <$> wrap (_lastTable ctx)
@@ -222,6 +243,7 @@ findTableIdInCaption = walkCaptionM findInInlines
 
 data RefError = LevelSkipped (Maybe ClauseNum) 
               | NoClause Identifier
+              | WrongPrefix T.Text Identifier
               deriving Show
 
 
@@ -231,6 +253,18 @@ errIfNothing err Nothing = throwError err
 errIfNothing _ (Just x) = return x
 
 
+-- | Helper function to process notes at the end of a clause
+processNotes :: Monad m => StateT RefBuildingState (ExceptT RefError m) ()
+processNotes = do
+        notes <- use currentNotes
+        currentNotes .= []
+        let inserts = uncurry HM.insert <$> numberNotes notes
+        -- insert the notes
+        currentRefs . noteRefs %= foldr (.) id inserts
+    where -- no NOTE number if there's only one
+          numberNotes [singleNote] = [(singleNote, NoteNum Nothing)]
+          numberNotes notes = zip (reverse notes) (NoteNum . Just <$> [1..])
+
 -- | Extract reference targets from block elements.
 sniffRef :: Monad m => Block 
            -> StateT RefBuildingState (ExceptT RefError m) Block
@@ -238,17 +272,15 @@ sniffRef blk@(Header lvl attrs headerText) = do
     -- first, adjust the current clause
     cls <- use currentClause
     let curLvl = maybe 0 clauseLevel cls
-    newClause <- currentClause <<~ case (lvl - curLvl) of
+    newClause <- currentClause <<~ case (curLvl - lvl) of
         -- new level is 1 higher -> descend
-        1 -> return $ Just (descendInto cls)
-        -- level is >1 or zero/negative
-        diff -> if diff > 0 
+        (-1) -> return $ Just (descendInto cls)
+        -- level is <-1 or positive
+        diff -> if diff < 0 
                 -- descending more than one level at a time
                 -- is not allowed
                 then throwError (LevelSkipped cls)
-                -- go up the indicated number of levels, then
-                -- increment the clause
-                else return $ fmap nextClause (cls >>= goUp (-diff))
+                else processNotes >> endClause cls diff
     -- does the clause have a proper label/identifier?
     -- if so, register it (we sequence over Maybe to do the checks)
     sequence_ $ do
@@ -257,7 +289,10 @@ sniffRef blk@(Header lvl attrs headerText) = do
         clauseId <- extractIdWithPrefix "sec" attrs
         return (registerClause newCls clauseId)
     return blk
-    where registerClause cls clauseId = do
+    where -- go up the indicated number of levels, then
+          -- increment the clause
+          endClause cls diff = return $ fmap nextClause (cls >>= goUp diff)
+          registerClause cls clauseId = do
             let clauseInfo = ClauseInfo cls headerText clauseId
             currentRefs . clauseRefs . at clauseId .= Just clauseInfo
 
@@ -289,6 +324,40 @@ sniffRef blk@(Table attrs tblCapt cs th tb tf) = do
                   tabStr = (tabStr':emdash)
                   long' = prependToBlocks [tabStr'] emdash long
 
+sniffRef blk@(Div (divId', classes, kvals) blks)
+    | "note" `elem` classes = registerNote
+    | otherwise = return blk
+    where colon = [Str ":", Space]
+          registerNote = do
+            num <- uses currentNotes ((+1) . length)
+            curClause <- uses currentClause clauseNumToIdent 
+            -- derive an ID if none exists yet
+            divId <- lift $ case divId' of
+                "" -> return $ "not:" <> curClause <> "_" <> T.pack (show num)
+                -- TODO maybeToErr?
+                _ -> case checkForPrefix "not" divId' of
+                    Nothing -> throwError (WrongPrefix "not" divId')
+                    _ -> return divId'
+            -- register the note ID
+            currentNotes %= (divId:)
+            -- update the block element with a cite node
+            let cite = Citation { citationId = divId
+                                , citationPrefix = []
+                                , citationSuffix = []
+                                , citationMode = NormalCitation
+                                -- probably not semantically correct
+                                -- but this node will be removed by our
+                                -- citation processing logic in the next pass
+                                -- so it won't be seen by any other filters
+                                , citationNoteNum = num
+                                , citationHash = 0 }
+            let newBlks = prependToBlocks [Cite [cite] []] colon blks
+            -- add custom-styles: Note
+            -- TODO factor this out into a DOCX-specific thing
+            -- mapping classes to DOCX styles
+            let styling = ("custom-style", "Note")
+            return $ Div (divId, classes, (styling:kvals)) newBlks
+
 sniffRef x = return x
 
 
@@ -312,16 +381,18 @@ findAndFormatRef refId refStore fmt = do
 
 substituteInlineRefs :: Monad m => DocRefStore -> Inline -> StateT [Identifier] m Inline
 substituteInlineRefs refs inl@(Cite [cited] _) = case refPrefix of
-        Just "sec" -> dispatchTo clauseRefs $ fmtInfo "clause"
-        Just "tbl" -> dispatchTo tableRefs $ fmtInfo "table"
+        Just "sec" -> dispatchTo clauseRefs $ fmtInfo linkify "clause"
+        Just "tbl" -> dispatchTo tableRefs $ fmtInfo linkify "table"
+        Just "not" -> dispatchTo noteRefs $ fmtInfo spanify "note"
         _ -> return inl
     where refId = citationId cited
           refPrefix = extractClassifierPrefix refId
           dispatchTo theLens = findAndFormatRef refId (refs ^. theLens)
-          fmtInfo refType Nothing = Strong [Str errStr]
+          fmtInfo _ refType Nothing = Strong [Str errStr]
             where errStr = "!No " <> refType <> " labelled " <> refId <> "!"
-          fmtInfo _ (Just info) = linkify (inline info)
+          fmtInfo transf _ (Just info) = transf (inline info)
           linkify text = Link ("", [], []) text (T.cons '#' refId, "")
+          spanify text = Span ("", [], []) text
 
 substituteInlineRefs _ inl = return inl
 
