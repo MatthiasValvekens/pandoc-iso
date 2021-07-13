@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
 
 module Text.Pandoc.ISO
-    ( handleInternalRefs, RefError  )
+    ( handleInternalRefs, RefError 
+    , handleStyles )
     where
 
 import Text.Pandoc.Definition
@@ -352,11 +353,7 @@ sniffRef blk@(Div (divId', classes, kvals) blks)
                                 , citationNoteNum = num
                                 , citationHash = 0 }
             let newBlks = prependToBlocks [Cite [cite] []] colon blks
-            -- add custom-styles: Note
-            -- TODO factor this out into a DOCX-specific thing
-            -- mapping classes to DOCX styles
-            let styling = ("custom-style", "Note")
-            return $ Div (divId, classes, (styling:kvals)) newBlks
+            return $ Div (divId, classes, kvals) newBlks
 
 sniffRef x = return x
 
@@ -402,4 +399,24 @@ handleInternalRefs doc = do
     (newDoc, refs) <- sniffRefs doc
     let inlineSub = substituteInlineRefs refs
     lift $ runStateT (walkPandocM inlineSub newDoc) []
+
+
+docxDivStyles :: HM.HashMap T.Text T.Text
+docxDivStyles = HM.fromList
+    [ ("note", "Note")
+    , ("ed-note", "Editors Note") ]
+
+-- use the first class that makes sense as a word style
+handleStyles' :: HM.HashMap T.Text T.Text -> Attr -> Attr
+handleStyles' styles (elId, classes, kvals) = (elId, classes, newKvals)
+    where asWordStyles = [HM.lookup cls styles | cls <- classes] 
+          newKvals = case msum asWordStyles of
+            Just style -> (("custom-style", style):kvals)
+            Nothing -> kvals
+
+handleStyles :: Monad m => Pandoc -> m Pandoc
+handleStyles = walkPandocM (return . blockSub)
+    where blockSub (Div attrs blks) = Div attrs' blks
+            where attrs' = handleStyles' docxDivStyles attrs
+          blockSub x = x
 

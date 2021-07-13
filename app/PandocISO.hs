@@ -12,7 +12,7 @@ handleRefsWithErrors doc = do
         Left err -> errh err
         Right (newDoc, undefinedRefs) -> do
             mapM_ printWarning undefinedRefs
-            return newDoc
+            handleStyles newDoc
     where printWarning undefRef = hPutStrLn stderr warningStr 
             where warningStr = "[Warning] Undefined reference: " ++ T.unpack undefRef
           errh err = hPutStrLn stderr errStr >> return doc
