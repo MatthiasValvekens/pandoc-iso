@@ -1,6 +1,6 @@
 # pandoc-iso
 
-Haskell Pandoc filter to handle some referencing issues when composing ISO docs in Pandoc
+This is a Haskell Pandoc JSON filter to handle some referencing issues when composing ISO docs in Pandoc. I used Haskell because I'm more familiar with it than with Lua, and because it's Pandoc's "native" environment.
 
 Things it does:
 
@@ -14,7 +14,7 @@ So far there are no DOCX-specific features, I'm still using Leonard's Lua filter
 
 Things I plan to sort out, in no particular order:
 
- - Make it easier to work with normative / informative references from BibTeX.
+ - Make it easier to work with normative / informative references from BibTeX. I've been using `citeproc` so far, but it's a bit too simplistic for my tastes.
  - Figure out how to get the internal links to play nice with MS Word editing features (my OOXML chops are a bit lacking, though).
  - Make link styling more neutral
 
