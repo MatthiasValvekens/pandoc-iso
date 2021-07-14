@@ -57,5 +57,8 @@ Compatibility note: the syntax is the same as for `pandoc-tablenos`, so you can'
 
 All divs of class `.note` will be automatically rendered with `custom-style="Note"` and prefixed with `NOTE:` if they're the only note in their clause, or `NOTE <number>:` if there are multiple ones.
 
-This only works reliably if the first child of the div is a `Para` or `Plain` element, but I think that's (almost?) always the case.
+If the first child of the div is not a `Para` or `Plain` element, a new `Plain` block will be inserted.
 
+## Example auto-numbering
+
+Same as for notes, but replace `.note` with `.example`.

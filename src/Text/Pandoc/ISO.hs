@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings, FlexibleContexts, RankNTypes #-}
 
 module Text.Pandoc.ISO
     ( handleInternalRefs, RefError 
@@ -128,20 +128,49 @@ instance Inlinable Captioned where
 
 type DocRefs = HM.HashMap Identifier
 
-newtype NoteNum = NoteNum (Maybe Int)
 
-instance Inlinable NoteNum where
-    inline (NoteNum Nothing) = [Str "NOTE"]
-    inline (NoteNum (Just n)) = [Str $ "NOTE " <> T.pack (show n)]
+class NoteLikeType a where
+    noteLikePrefix :: a -> T.Text
+    identifierPrefix :: a -> T.Text
+    identifiersInClause :: a -> Lens' RefBuildingState [Identifier]
+    knownInstances :: a -> Lens' DocRefStore (DocRefs (NoteLike a))
+
+-- Using singletons here for now, to keep the number of lang extensions
+-- required to a minimum (in particular things like flexible/overlapping
+-- instances)
+
+data NoteLike a = NoteLike a (Maybe Int)
+data ISONote = ISONote
+data ISOExample = ISOExample
+
+instance NoteLikeType ISONote where
+    noteLikePrefix _ = "NOTE"
+    identifierPrefix _ = "not"
+    identifiersInClause _ = currentNotes
+    knownInstances _ = noteRefs
+
+instance NoteLikeType ISOExample where
+    noteLikePrefix _ = "EXAMPLE"
+    identifierPrefix _ = "exa"
+    identifiersInClause _ = currentExamples
+    knownInstances _ = exampleRefs
+
+instance NoteLikeType a => Inlinable (NoteLike a) where
+    inline (NoteLike noteType num) = case num of
+            Nothing -> [Str pref]
+            Just n -> [Str $ pref <> " " <> T.pack (show n)]
+        where pref = noteLikePrefix noteType
+
 
 data DocRefStore = DocRefStore
     { _clauseRefs :: DocRefs ClauseInfo
     , _tableRefs :: DocRefs Captioned
-    , _noteRefs :: DocRefs NoteNum }
+    , _noteRefs :: DocRefs (NoteLike ISONote)
+    , _exampleRefs :: DocRefs (NoteLike ISOExample) }
 
 
 initRefStore :: DocRefStore
-initRefStore = DocRefStore HM.empty HM.empty HM.empty
+initRefStore = DocRefStore HM.empty HM.empty HM.empty HM.empty
 
 
 clauseRefs :: Lens' DocRefStore (DocRefs ClauseInfo)
@@ -152,15 +181,20 @@ tableRefs :: Lens' DocRefStore (DocRefs Captioned)
 tableRefs wrap ctx = doSet <$> wrap (_tableRefs ctx)
     where doSet x = ctx { _tableRefs = x }
 
-noteRefs :: Lens' DocRefStore (DocRefs NoteNum)
+noteRefs :: Lens' DocRefStore (DocRefs (NoteLike ISONote))
 noteRefs wrap ctx = doSet <$> wrap (_noteRefs ctx)
     where doSet x = ctx { _noteRefs = x }
+
+exampleRefs :: Lens' DocRefStore (DocRefs (NoteLike ISOExample))
+exampleRefs wrap ctx = doSet <$> wrap (_exampleRefs ctx)
+    where doSet x = ctx { _exampleRefs = x }
 
 
 data RefBuildingState = RefBuildingState
     { _currentRefs :: DocRefStore
     , _currentClause :: Maybe ClauseNum
-    , _currentNotes :: [T.Text]
+    , _currentNotes :: [Identifier]
+    , _currentExamples :: [Identifier]
     , _lastTable :: Int }
 
 
@@ -169,6 +203,7 @@ initRefBuildingState = RefBuildingState
     { _currentRefs = initRefStore 
     , _currentClause = Nothing
     , _currentNotes = []
+    , _currentExamples = []
     , _lastTable = 0 }
 
 
@@ -180,9 +215,13 @@ currentClause :: Lens' RefBuildingState (Maybe ClauseNum)
 currentClause wrap ctx = doSet <$> wrap (_currentClause ctx)
     where doSet x = ctx { _currentClause = x }
 
-currentNotes :: Lens' RefBuildingState [T.Text]
+currentNotes :: Lens' RefBuildingState [Identifier]
 currentNotes wrap ctx = doSet <$> wrap (_currentNotes ctx)
     where doSet x = ctx { _currentNotes = x }
+
+currentExamples :: Lens' RefBuildingState [Identifier]
+currentExamples wrap ctx = doSet <$> wrap (_currentExamples ctx)
+    where doSet x = ctx { _currentExamples = x }
 
 lastTable :: Lens' RefBuildingState Int
 lastTable wrap ctx = doSet <$> wrap (_lastTable ctx)
@@ -254,17 +293,31 @@ errIfNothing err Nothing = throwError err
 errIfNothing _ (Just x) = return x
 
 
--- | Helper function to process notes at the end of a clause
-processNotes :: Monad m => StateT RefBuildingState (ExceptT RefError m) ()
-processNotes = do
-        notes <- use currentNotes
-        currentNotes .= []
+-- Internal helper for processNoteLikes.
+-- Observe: we pass in an explicit type witness here.
+processNoteLikes' :: (Monad m, NoteLikeType a) => a -> StateT RefBuildingState (ExceptT RefError m) ()
+processNoteLikes' noteLikeType = do
+        notes <- use inClause 
+        inClause .= []
         let inserts = uncurry HM.insert <$> numberNotes notes
         -- insert the notes
-        currentRefs . noteRefs %= foldr (.) id inserts
+        currentRefs . known %= foldr (.) id inserts
     where -- no NOTE number if there's only one
-          numberNotes [singleNote] = [(singleNote, NoteNum Nothing)]
-          numberNotes notes = zip (reverse notes) (NoteNum . Just <$> [1..])
+          numberNotes [singleNote] = [(singleNote, createNote Nothing)]
+          numberNotes notes = zip (reverse notes) (createNote . Just <$> [1..])
+          createNote = NoteLike noteLikeType
+          -- necessary to prevent the monomorphism restriction (?) from kicking in
+          inClause :: Lens' RefBuildingState [Identifier]
+          inClause = identifiersInClause noteLikeType
+          known = knownInstances noteLikeType
+          
+
+
+-- | Helper function to process "note-like" thinks (actual notes, examples)
+-- at the end of a clause.
+processNoteLikes :: Monad m => StateT RefBuildingState (ExceptT RefError m) ()
+processNoteLikes = processNoteLikes' ISONote >> processNoteLikes' ISOExample
+
 
 -- | Extract reference targets from block elements.
 sniffRef :: Monad m => Block 
@@ -281,7 +334,7 @@ sniffRef blk@(Header lvl attrs headerText) = do
                 -- descending more than one level at a time
                 -- is not allowed
                 then throwError (LevelSkipped cls)
-                else processNotes >> endClause cls diff
+                else processNoteLikes >> endClause cls diff
     -- does the clause have a proper label/identifier?
     -- if so, register it (we sequence over Maybe to do the checks)
     sequence_ $ do
@@ -326,34 +379,39 @@ sniffRef blk@(Table attrs tblCapt cs th tb tf) = do
                   long' = prependToBlocks [tabStr'] emdash long
 
 sniffRef blk@(Div (divId', classes, kvals) blks)
-    | "note" `elem` classes = registerNote
+    | "note" `elem` classes = registerNoteLike ISONote
+    | "example" `elem` classes = registerNoteLike ISOExample
     | otherwise = return blk
     where colon = [Str ":", Space]
-          registerNote = do
-            num <- uses currentNotes ((+1) . length)
-            curClause <- uses currentClause clauseNumToIdent 
-            -- derive an ID if none exists yet
-            divId <- lift $ case divId' of
-                "" -> return $ "not:" <> curClause <> "_" <> T.pack (show num)
-                -- TODO maybeToErr?
-                _ -> case checkForPrefix "not" divId' of
-                    Nothing -> throwError (WrongPrefix "not" divId')
-                    _ -> return divId'
-            -- register the note ID
-            currentNotes %= (divId:)
-            -- update the block element with a cite node
-            let cite = Citation { citationId = divId
-                                , citationPrefix = []
-                                , citationSuffix = []
-                                , citationMode = NormalCitation
-                                -- probably not semantically correct
-                                -- but this node will be removed by our
-                                -- citation processing logic in the next pass
-                                -- so it won't be seen by any other filters
-                                , citationNoteNum = num
-                                , citationHash = 0 }
-            let newBlks = prependToBlocks [Cite [cite] []] colon blks
-            return $ Div (divId, classes, kvals) newBlks
+          registerNoteLike noteLikeType = do
+                num <- uses inClause ((+1) . length)
+                curClause <- uses currentClause clauseNumToIdent 
+                -- derive an ID if none exists yet
+                divId <- lift $ case divId' of
+                    "" -> return $ idPref <> ":" <> curClause <> "_" <> T.pack (show num)
+                    -- TODO maybeToErr?
+                    _ -> case checkForPrefix idPref divId' of
+                        Nothing -> throwError (WrongPrefix idPref divId')
+                        _ -> return divId'
+                -- register the note ID
+                inClause %= (divId:)
+                -- update the block element with a cite node
+                let cite = Citation { citationId = divId
+                                    , citationPrefix = []
+                                    , citationSuffix = []
+                                    , citationMode = NormalCitation
+                                    -- probably not semantically correct
+                                    -- but this node will be removed by our
+                                    -- citation processing logic in the next pass
+                                    -- so it won't be seen by any other filters
+                                    , citationNoteNum = num
+                                    , citationHash = 0 }
+                let newBlks = prependToBlocks [Cite [cite] []] colon blks
+                return $ Div (divId, classes, kvals) newBlks
+            where idPref = identifierPrefix noteLikeType
+                  -- necessary to prevent the monomorphism restriction (?) from kicking in
+                  inClause :: Lens' RefBuildingState [Identifier]
+                  inClause = identifiersInClause noteLikeType
 
 sniffRef x = return x
 
@@ -381,6 +439,7 @@ substituteInlineRefs refs inl@(Cite [cited] _) = case refPrefix of
         Just "sec" -> dispatchTo clauseRefs $ fmtInfo linkify "clause"
         Just "tbl" -> dispatchTo tableRefs $ fmtInfo linkify "table"
         Just "not" -> dispatchTo noteRefs $ fmtInfo spanify "note"
+        Just "exa" -> dispatchTo exampleRefs $ fmtInfo spanify "example"
         _ -> return inl
     where refId = citationId cited
           refPrefix = extractClassifierPrefix refId
