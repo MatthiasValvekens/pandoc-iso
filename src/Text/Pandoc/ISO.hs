@@ -9,7 +9,9 @@ import Text.Pandoc.Definition
 import Text.Pandoc.Walk
 
 import Data.Ord (comparing)
-import Data.Maybe (isNothing, catMaybes)
+import Data.Maybe (isJust, isNothing, catMaybes, fromMaybe)
+import Data.Foldable (find)
+import Data.List (intercalate)
 import Data.Hashable
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
@@ -98,7 +100,7 @@ instance Ord ClauseNum where
 
 
 data ClauseInfo = ClauseInfo
-    { clauseNum :: ClauseNum
+    { clauseNum   :: ClauseNum
     , clauseTitle :: [Inline]
     , clauseLabel :: Identifier } deriving Show
 
@@ -106,6 +108,15 @@ data ClauseInfo = ClauseInfo
 instance Inlinable ClauseInfo where
     inline (ClauseInfo num title _) = 
         [ Str $ clauseNumText num, Str ",", Space, Str "\"" ] ++ title ++ [Str "\""]
+
+
+data BibRefInfo = BibRefInfo 
+    { bibRefLabel  :: Identifier
+    , bibDispLabel :: [Inline] } deriving Show
+
+
+instance Inlinable BibRefInfo where
+    inline = bibDispLabel
 
 
 data Captioned = Captioned
@@ -166,11 +177,12 @@ data DocRefStore = DocRefStore
     { _clauseRefs :: DocRefs ClauseInfo
     , _tableRefs :: DocRefs Captioned
     , _noteRefs :: DocRefs (NoteLike ISONote)
-    , _exampleRefs :: DocRefs (NoteLike ISOExample) }
+    , _exampleRefs :: DocRefs (NoteLike ISOExample)
+    , _normRefs :: DocRefs BibRefInfo }
 
 
 initRefStore :: DocRefStore
-initRefStore = DocRefStore HM.empty HM.empty HM.empty HM.empty
+initRefStore = DocRefStore HM.empty HM.empty HM.empty HM.empty HM.empty
 
 
 clauseRefs :: Lens' DocRefStore (DocRefs ClauseInfo)
@@ -188,6 +200,10 @@ noteRefs wrap ctx = doSet <$> wrap (_noteRefs ctx)
 exampleRefs :: Lens' DocRefStore (DocRefs (NoteLike ISOExample))
 exampleRefs wrap ctx = doSet <$> wrap (_exampleRefs ctx)
     where doSet x = ctx { _exampleRefs = x }
+
+normRefs :: Lens' DocRefStore (DocRefs BibRefInfo)
+normRefs wrap ctx = doSet <$> wrap (_normRefs ctx)
+    where doSet x = ctx { _normRefs = x }
 
 
 data RefBuildingState = RefBuildingState
@@ -381,6 +397,7 @@ sniffRef blk@(Table attrs tblCapt cs th tb tf) = do
 sniffRef blk@(Div (divId', classes, kvals) blks)
     | "note" `elem` classes = registerNoteLike ISONote
     | "example" `elem` classes = registerNoteLike ISOExample
+    | "normref" `elem` classes = registerNormativeReference
     | otherwise = return blk
     where colon = [Str ":", Space]
           registerNoteLike noteLikeType = do
@@ -412,6 +429,21 @@ sniffRef blk@(Div (divId', classes, kvals) blks)
                   -- necessary to prevent the monomorphism restriction (?) from kicking in
                   inClause :: Lens' RefBuildingState [Identifier]
                   inClause = identifiersInClause noteLikeType
+          findAttr key = fmap snd . find (\attr -> fst attr == key)
+          registerNormativeReference = do
+            -- check for 'nrm:' prefix
+            lift $ case checkForPrefix "nrm" divId' of
+                Nothing -> throwError (WrongPrefix "nrm" divId')
+                _ -> return ()
+                
+            -- find the reference's label attribute, or use the div's id attribute
+            -- if not present (as a backup)
+            let dispLabel = fromMaybe divId' (findAttr "label" kvals)
+
+            -- register the info entry
+            currentRefs . normRefs . at divId' .= Just (BibRefInfo divId' [Str dispLabel])
+            return blk
+            
 
 sniffRef x = return x
 
@@ -426,6 +458,7 @@ sniffRefs doc = do
      return (newDoc, finalState ^. currentRefs)
 
 
+-- | Helper functions to find references.
 findAndFormatRef :: Monad m => Identifier -> DocRefs a 
                  -> (Maybe a -> b) -> StateT [Identifier] m b
 findAndFormatRef refId refStore fmt = do
@@ -434,13 +467,16 @@ findAndFormatRef refId refStore fmt = do
     return (fmt theRef)
 
 
-substituteInlineRefs :: Monad m => DocRefStore -> Inline -> StateT [Identifier] m Inline
-substituteInlineRefs refs inl@(Cite [cited] _) = case refPrefix of
-        Just "sec" -> dispatchTo clauseRefs $ fmtInfo linkify "clause"
-        Just "tbl" -> dispatchTo tableRefs $ fmtInfo linkify "table"
-        Just "not" -> dispatchTo noteRefs $ fmtInfo spanify "note"
-        Just "exa" -> dispatchTo exampleRefs $ fmtInfo spanify "example"
-        _ -> return inl
+-- | Process one of our "special" inline citations, and accumulate undefined identifiers
+-- in the process. Returns 'Nothing' if the classifier prefix is not present or not recognised.
+processInlineCitation :: Monad m => DocRefStore -> Citation -> Maybe (StateT [Identifier] m Inline)
+processInlineCitation refs cited = case refPrefix of
+        Just "sec" -> Just $ dispatchTo clauseRefs $ fmtInfo linkify "clause"
+        Just "tbl" -> Just $ dispatchTo tableRefs $ fmtInfo linkify "table"
+        Just "not" -> Just $ dispatchTo noteRefs $ fmtInfo spanify "note"
+        Just "exa" -> Just $ dispatchTo exampleRefs $ fmtInfo spanify "example"
+        Just "nrm" -> Just $ dispatchTo normRefs $ fmtInfo citationLink "normative reference"
+        _ -> Nothing
     where refId = citationId cited
           refPrefix = extractClassifierPrefix refId
           dispatchTo theLens = findAndFormatRef refId (refs ^. theLens)
@@ -449,15 +485,49 @@ substituteInlineRefs refs inl@(Cite [cited] _) = case refPrefix of
           fmtInfo transf _ (Just info) = transf (inline info)
           linkify text = Link ("", [], []) text (T.cons '#' refId, "")
           spanify text = Span ("", [], []) text
+          citationLink text = spanify $ pref ++ [linkify text] ++ suff
+            where pref = citationPrefix cited
+                  suff = citationSuffix cited
+
+
+substituteInlineRefs :: Monad m => DocRefStore -> Inline 
+                     -> StateT [Identifier] (ExceptT RefError m) Inline
+-- do nothing if we can't process the citation
+substituteInlineRefs refs inl@(Cite [cited] _) = fromMaybe (return inl) maybeHandle
+    where maybeHandle = processInlineCitation refs cited 
+
+-- handler for Cite inlines with multiple members, intended for use with normative refs
+substituteInlineRefs refs inl@(Cite cites _)
+    -- does any of the refs have "nrm:" as its prefix?
+    | any isNormRef cites = case find (not . isNormRef) cites of
+        -- can't mix normative refs with other refs, since it messes up the interaction
+        -- between our normative reference handler and citeproc.
+        Just cite -> throwError (WrongPrefix "nrm" (citationId cite))
+        -- the fromMaybe should be unnecessary here, but let's code defensively
+        _ -> fromMaybe (return inl) maybeHandleAll
+    -- if no normative refs present -> ignore
+    | otherwise = return inl
+    where isNormRef cited = isJust (checkForPrefix "nrm" $ citationId cited)
+          -- the passage over Maybe is purely defensive here, since we already
+          -- checked for nrm: everywhere, but we still use processInlineCitation
+          -- for uniformity's sake.
+          maybeHandleAll = do
+            -- process each Citation object individually
+            processedRefs <- sequence $ processInlineCitation refs <$> cites
+            -- ... and put the results in a Span
+            return (joinCitations <$> sequence processedRefs)
+          joinCitations :: [Inline] -> Inline
+          joinCitations = Span ("", [], []) . intercalate [Str ";", Space] . fmap return
 
 substituteInlineRefs _ inl = return inl
+
 
 
 handleInternalRefs :: Monad m => Pandoc -> ExceptT RefError m (Pandoc, [Identifier])
 handleInternalRefs doc = do
     (newDoc, refs) <- sniffRefs doc
     let inlineSub = substituteInlineRefs refs
-    lift $ runStateT (walkPandocM inlineSub newDoc) []
+    runStateT (walkPandocM inlineSub newDoc) []
 
 
 docxDivStyles :: HM.HashMap T.Text T.Text
