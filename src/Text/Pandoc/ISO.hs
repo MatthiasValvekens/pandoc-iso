@@ -453,7 +453,7 @@ sniffRef x = return x
 -- as well.
 sniffRefs :: Monad m => Pandoc -> ExceptT RefError m (Pandoc, DocRefStore)
 sniffRefs doc = do
-     let sniffer = walkPandocM sniffRef doc
+     let sniffer = walkPandocM sniffRef doc <* processNoteLikes
      (newDoc, finalState) <- runStateT sniffer initRefBuildingState
      return (newDoc, finalState ^. currentRefs)
 
