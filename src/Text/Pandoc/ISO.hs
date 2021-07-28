@@ -166,6 +166,9 @@ instance NoteLikeType ISOExample where
     identifiersInClause _ = currentExamples
     knownInstances _ = exampleRefs
 
+edNotePrefix :: T.Text
+edNotePrefix = "ED NOTE"
+
 instance NoteLikeType a => Inlinable (NoteLike a) where
     inline (NoteLike noteType num) = case num of
             Nothing -> [Str pref]
@@ -335,10 +338,11 @@ processNoteLikes :: Monad m => StateT RefBuildingState (ExceptT RefError m) ()
 processNoteLikes = processNoteLikes' ISONote >> processNoteLikes' ISOExample
 
 
--- | Extract reference targets from block elements.
-sniffRef :: Monad m => Block 
-           -> StateT RefBuildingState (ExceptT RefError m) Block
-sniffRef blk@(Header lvl attrs headerText) = do
+-- | Extract reference targets from block elements and reformat their
+-- contents if necessary.
+processBlock :: Monad m => Block 
+             -> StateT RefBuildingState (ExceptT RefError m) Block
+processBlock blk@(Header lvl attrs headerText) = do
     -- first, adjust the current clause
     cls <- use currentClause
     let curLvl = maybe 0 clauseLevel cls
@@ -366,7 +370,7 @@ sniffRef blk@(Header lvl attrs headerText) = do
             let clauseInfo = ClauseInfo cls headerText clauseId
             currentRefs . clauseRefs . at clauseId .= Just clauseInfo
 
-sniffRef blk@(Table attrs tblCapt cs th tb tf) = do
+processBlock blk@(Table attrs tblCapt cs th tb tf) = do
         let (cleanedCapt, maybeTableId) = runWriter findTableId
         case maybeTableId of
             Nothing -> return blk -- nothing to do
@@ -394,10 +398,11 @@ sniffRef blk@(Table attrs tblCapt cs th tb tf) = do
                   tabStr = (tabStr':emdash)
                   long' = prependToBlocks [tabStr'] emdash long
 
-sniffRef blk@(Div (divId', classes, kvals) blks)
+processBlock blk@(Div (divId', classes, kvals) blks)
     | "note" `elem` classes = registerNoteLike ISONote
     | "example" `elem` classes = registerNoteLike ISOExample
     | "normref" `elem` classes = registerNormativeReference
+    | "ed-note" `elem` classes = prependEdNote
     | otherwise = return blk
     where colon = [Str ":", Space]
           registerNoteLike noteLikeType = do
@@ -413,6 +418,8 @@ sniffRef blk@(Div (divId', classes, kvals) blks)
                 -- register the note ID
                 inClause %= (divId:)
                 -- update the block element with a cite node
+                -- This will later get expanded to "NOTE n" or "EXAMPLE n"
+                -- as necessary
                 let cite = Citation { citationId = divId
                                     , citationPrefix = []
                                     , citationSuffix = []
@@ -443,17 +450,19 @@ sniffRef blk@(Div (divId', classes, kvals) blks)
             -- register the info entry
             currentRefs . normRefs . at divId' .= Just (BibRefInfo divId' [Str dispLabel])
             return blk
+          prependEdNote = return $ Div (divId', classes, kvals) newBlks
+            where newBlks = prependToBlocks [Str edNotePrefix] colon blks
             
 
-sniffRef x = return x
+processBlock x = return x
 
 
 -- | Walk the tree and gather up all referenceable objects.
 -- This also adjusts table captions, hence why it returns a new Pandoc object
 -- as well.
-sniffRefs :: Monad m => Pandoc -> ExceptT RefError m (Pandoc, DocRefStore)
-sniffRefs doc = do
-     let sniffer = walkPandocM sniffRef doc <* processNoteLikes
+processBlocks :: Monad m => Pandoc -> ExceptT RefError m (Pandoc, DocRefStore)
+processBlocks doc = do
+     let sniffer = walkPandocM processBlock doc <* processNoteLikes
      (newDoc, finalState) <- runStateT sniffer initRefBuildingState
      return (newDoc, finalState ^. currentRefs)
 
@@ -525,7 +534,7 @@ substituteInlineRefs _ inl = return inl
 
 handleInternalRefs :: Monad m => Pandoc -> ExceptT RefError m (Pandoc, [Identifier])
 handleInternalRefs doc = do
-    (newDoc, refs) <- sniffRefs doc
+    (newDoc, refs) <- processBlocks doc
     let inlineSub = substituteInlineRefs refs
     runStateT (walkPandocM inlineSub newDoc) []
 
