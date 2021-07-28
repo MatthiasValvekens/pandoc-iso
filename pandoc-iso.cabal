@@ -14,8 +14,9 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Text.Pandoc.ISO
+      Text.Pandoc.ISO.Filter
   other-modules:
+      Text.Pandoc.ISO.Types
       Paths_pandoc_iso
   hs-source-dirs:
       src

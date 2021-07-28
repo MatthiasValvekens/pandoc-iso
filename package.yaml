@@ -20,7 +20,7 @@ library:
   ghc-options:
   - -Wall
   exposed-modules:
-    - Text.Pandoc.ISO
+    - Text.Pandoc.ISO.Filter
 
 executables:
   pandoc-iso:

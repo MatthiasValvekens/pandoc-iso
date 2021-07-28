@@ -1,6 +1,6 @@
 import System.IO (hPutStrLn, stderr)
 import qualified Data.Text as T
-import Text.Pandoc.ISO
+import Text.Pandoc.ISO.Filter
 import Text.Pandoc.JSON
 import Control.Monad.Except
 
