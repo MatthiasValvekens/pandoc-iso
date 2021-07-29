@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
 
 module Text.Pandoc.ISO.Filter
-    ( handleInternalRefs, RefError 
+    ( handleInternalRefs, RefError (..)
     , handleStyles )
     where
 
