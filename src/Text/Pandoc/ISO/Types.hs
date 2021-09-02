@@ -17,8 +17,9 @@ class Inlinable a where
     inline :: a -> [Inline]
 
 
--- | Little-endian clause number
-data ClauseNum = ClauseNum Int [Int] deriving Eq
+-- | Little-endian clause number,
+-- boolean indicates whether it's an annex or not
+data ClauseNum = ClauseNum Int [Int] Bool deriving Eq
 
 type Identifier = T.Text
 
@@ -33,30 +34,34 @@ prependToBlocks toPrepend connector blks = case blks of
 
 -- | Turn a 'ClauseNum' object into a big-endian list
 clauseAsList :: ClauseNum -> [Int]
-clauseAsList (ClauseNum x xs) = reverse (x:xs)
+clauseAsList (ClauseNum x xs _) = reverse (x:xs)
 
 clauseLevel :: ClauseNum -> Int
-clauseLevel (ClauseNum _ xs) = 1 + length xs
+clauseLevel (ClauseNum _ xs _) = 1 + length xs
+
+isAnnex :: ClauseNum -> Bool
+isAnnex (ClauseNum _ _ x) = x
 
 
 -- | Descend into the first subclause of a clause
 -- If 'ClauseNum' is 'Nothing', it is treated as the (unnumbered)
 -- root clause.
 descendInto :: Maybe ClauseNum -> ClauseNum
-descendInto parent = ClauseNum 1 $ case parent of
-    Nothing -> []
-    Just (ClauseNum x xs) -> (x:xs)
+descendInto parent = ClauseNum 1 tailPart annex
+    where (tailPart, annex) = case parent of
+            Nothing -> ([], False)
+            Just (ClauseNum x xs anx) -> ((x:xs), anx)
 
 
 -- | Move to next clause at the same level
 nextClause :: ClauseNum -> ClauseNum
-nextClause (ClauseNum x xs) = ClauseNum (x + 1) xs
+nextClause (ClauseNum x xs annex) = ClauseNum (x + 1) xs annex
 
 
 -- | Move to superclause
 superclause :: ClauseNum -> Maybe ClauseNum
-superclause (ClauseNum _ []) = Nothing
-superclause (ClauseNum _ (x:xs)) = Just $ ClauseNum x xs
+superclause (ClauseNum _ [] _) = Nothing
+superclause (ClauseNum _ (x:xs) annex) = Just $ ClauseNum x xs annex
 
 -- | Move up a number of levels in the hierarchy (returning 'Nothing'
 -- if the clause is not deep enough)
@@ -66,9 +71,12 @@ goUp nos cn =  superclause cn >>= goUp (nos - 1)
 
 
 clauseNumText :: ClauseNum -> T.Text
-clauseNumText cls = T.intercalate "." nums
-    where nums = fmap (T.pack . show) $ clauseAsList cls
-
+clauseNumText cls = T.intercalate "." $ case isAnnex cls of
+        False -> numArrText nums
+        True -> T.singleton (ltrPrefix $ head nums):numArrText (tail nums)
+    where nums = clauseAsList cls
+          numArrText = fmap (T.pack . show)
+          ltrPrefix num = toEnum $ 0x40 + num
 
 clauseNumToIdent :: Maybe ClauseNum -> Identifier
 clauseNumToIdent Nothing = "root"
@@ -80,13 +88,12 @@ instance Show ClauseNum where
 
 
 instance Hashable ClauseNum where
-    hashWithSalt = hashUsing $ \(ClauseNum x xs) -> (x, xs)
+    hashWithSalt = hashUsing $ \(ClauseNum x xs annex) -> (x, xs, annex)
 
 
 instance Ord ClauseNum where
-    compare = comparing clauseAsList
+    compare = comparing $ \x -> (clauseAsList x, isAnnex x)
     
-
 
 data ClauseInfo = ClauseInfo
     { clauseNum   :: ClauseNum

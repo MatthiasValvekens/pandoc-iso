@@ -115,6 +115,22 @@ processNoteLikes :: Monad m => StateT RefBuildingState (ExceptT RefError m) ()
 processNoteLikes = processNoteLikes' ISONote >> processNoteLikes' ISOExample
 
 
+-- | Format an annex header with the proper styles
+fmtAnnex :: Int -> Attr -> [Inline] -> Block
+fmtAnnex lvl (elId, elCls, kvals) headerText = Div (elId, elCls, kvals') content
+    where style
+            | lvl == 1 = "ANNEX"
+            | otherwise = T.pack ('a':show lvl)
+          kvals' = (("custom-style", style):kvals)
+          content'
+            | lvl == 1 = (rawBr:headerText) ++ [rawBr, Str annexType]
+            | otherwise = headerText
+          content = [Plain content']
+          rawBr = RawInline (Format "openxml") "<w:br/>"
+          annexType
+            | "normative" `elem` elCls = "(normative)"
+            | otherwise = "(informative)"
+
 -- | Extract reference targets from block elements and reformat their
 -- contents if necessary.
 processBlock :: Monad m => Block 
@@ -139,7 +155,11 @@ processBlock blk@(Header lvl attrs headerText) = do
         newCls <- newClause
         clauseId <- extractIdWithPrefix "sec" attrs
         return (registerClause newCls clauseId)
-    return blk
+
+    -- if we're in the annexes, we need to emit something other than Header
+    -- to get the styles right in the ISO template
+    return $ if (maybe False isAnnex newClause)
+                then fmtAnnex lvl attrs headerText else blk
     where -- go up the indicated number of levels, then
           -- increment the clause
           endClause cls diff = return $ fmap nextClause (cls >>= goUp diff)
@@ -229,7 +249,14 @@ processBlock blk@(Div (divId', classes, kvals) blks)
             return blk
           prependEdNote = return $ Div (divId', classes, kvals) newBlks
             where newBlks = prependToBlocks [Str edNotePrefix] colon blks
-            
+
+-- Make sure the next Header is treated as an annex start
+-- (this is a bit of a hack, but it should be fine as long as no 
+-- reference targets appear between \backmatter and the first
+-- header)
+processBlock blk@(RawBlock (Format "tex") "\\backmatter") = do
+    currentClause .= Just (ClauseNum 0 [] True)
+    return blk
 
 processBlock x = return x
 
