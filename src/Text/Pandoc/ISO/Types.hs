@@ -71,12 +71,13 @@ goUp nos cn =  superclause cn >>= goUp (nos - 1)
 
 
 clauseNumText :: ClauseNum -> T.Text
-clauseNumText cls = T.intercalate "." $ case isAnnex cls of
-        False -> numArrText nums
-        True -> T.singleton (ltrPrefix $ head nums):numArrText (tail nums)
+clauseNumText cls
+    | isAnnex cls = "Annex " <> (T.intercalate "." annexNums)
+    | otherwise = T.intercalate "." (numArrText nums)
     where nums = clauseAsList cls
           numArrText = fmap (T.pack . show)
           ltrPrefix num = toEnum $ 0x40 + num
+          annexNums = T.singleton (ltrPrefix $ head nums):numArrText (tail nums)
 
 clauseNumToIdent :: Maybe ClauseNum -> Identifier
 clauseNumToIdent Nothing = "root"

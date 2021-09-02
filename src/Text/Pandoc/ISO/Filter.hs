@@ -125,8 +125,8 @@ fmtAnnex lvl (elId, elCls, kvals) headerText = Div (elId, elCls, kvals') content
           content'
             | lvl == 1 = (rawBr:headerText) ++ [rawBr, Str annexType]
             | otherwise = headerText
-          content = [Plain content']
-          rawBr = RawInline (Format "openxml") "<w:br/>"
+          content = [Para content']
+          rawBr = RawInline (Format "openxml") "<w:br/><w:br/>"
           annexType
             | "normative" `elem` elCls = "(normative)"
             | otherwise = "(informative)"
