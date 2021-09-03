@@ -167,6 +167,18 @@ processBlock blk@(Header lvl attrs headerText) = do
             let clauseInfo = ClauseInfo cls headerText clauseId
             currentRefs . clauseRefs . at clauseId .= Just clauseInfo
 
+-- Number T&D's within the clause in which they appear
+-- (As of now these aren't referenceable at the AST level, we just provide the numbers
+-- because ISO wants us to)
+processBlock (DefinitionList tnds) = do
+        cls <- use currentClause
+        let numberTerm = addNum (maybe "" clauseNumText cls)
+        return (DefinitionList $ uncurry numberTerm <$> withNums tnds)
+    where addNum prefix termNum (term, defs) = ((termNum':rawBr:term), defs)
+            where termNum' = Str $ prefix <> "." <> (T.pack $ show termNum)
+          rawBr = RawInline (Format "openxml") "<w:br/>"
+          withNums = zip [(1 :: Int)..]
+
 processBlock blk@(Table attrs tblCapt cs th tb tf) = do
         let (cleanedCapt, maybeTableId) = runWriter findTableId
         case maybeTableId of
