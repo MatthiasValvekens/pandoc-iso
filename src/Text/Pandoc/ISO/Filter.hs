@@ -123,10 +123,9 @@ fmtAnnex lvl (elId, elCls, kvals) headerText = Div (elId, elCls, kvals') content
             | otherwise = T.pack ('a':show lvl)
           kvals' = (("custom-style", style):kvals)
           content'
-            | lvl == 1 = (rawBr:headerText) ++ [rawBr, Str annexType]
+            | lvl == 1 = (LineBreak:Str annexType:LineBreak:LineBreak:headerText)
             | otherwise = headerText
           content = [Para content']
-          rawBr = RawInline (Format "openxml") "<w:br/><w:br/>"
           annexType
             | "normative" `elem` elCls = "(normative)"
             | otherwise = "(informative)"
@@ -174,9 +173,8 @@ processBlock (DefinitionList tnds) = do
         cls <- use currentClause
         let numberTerm = addNum (maybe "" clauseNumText cls)
         return (DefinitionList $ uncurry numberTerm <$> withNums tnds)
-    where addNum prefix termNum (term, defs) = ((termNum':rawBr:term), defs)
+    where addNum prefix termNum (term, defs) = ((termNum':LineBreak:term), defs)
             where termNum' = Str $ prefix <> "." <> (T.pack $ show termNum)
-          rawBr = RawInline (Format "openxml") "<w:br/>"
           withNums = zip [(1 :: Int)..]
 
 processBlock blk@(Table attrs tblCapt cs th tb tf) = do
