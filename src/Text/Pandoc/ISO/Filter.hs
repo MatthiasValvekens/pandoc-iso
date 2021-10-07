@@ -21,6 +21,7 @@ import Control.Monad.Except
 import Control.Lens
 
 import Text.Pandoc.ISO.Types
+import Text.Pandoc.ISO.OOXML (expandOOXMLMacro)
 
 
 
@@ -260,13 +261,15 @@ processBlock blk@(Div (divId', classes, kvals) blks)
           prependEdNote = return $ Div (divId', classes, kvals) newBlks
             where newBlks = prependToBlocks [Str edNotePrefix] colon blks
 
--- Make sure the next Header is treated as an annex start
--- (this is a bit of a hack, but it should be fine as long as no 
--- reference targets appear between \backmatter and the first
--- header)
-processBlock blk@(RawBlock (Format "tex") "\\backmatter") = do
-    currentClause .= Just (ClauseNum 0 [] True)
-    return blk
+processBlock blk@(RawBlock (Format "tex") macro) 
+    -- Make sure the next Header is treated as an annex start
+    -- (this is a bit of a hack, but it should be fine as long as no 
+    -- reference targets appear between \backmatter and the first
+    -- header)
+    | macro == "\\backmatter" = do
+            currentClause .= Just (ClauseNum 0 [] True)
+            return blk
+    | otherwise = return $ fromMaybe blk (expandOOXMLMacro macro)
 
 processBlock x = return x
 

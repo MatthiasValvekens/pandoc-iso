@@ -16,6 +16,7 @@ library
   exposed-modules:
       Text.Pandoc.ISO.Filter
   other-modules:
+      Text.Pandoc.ISO.OOXML
       Text.Pandoc.ISO.Types
       Paths_pandoc_iso
   hs-source-dirs:
