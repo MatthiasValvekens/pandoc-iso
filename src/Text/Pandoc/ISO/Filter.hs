@@ -47,12 +47,27 @@ extractIdWithPrefix :: T.Text -> Attr -> Maybe Identifier
 extractIdWithPrefix pref (idStr, _, _) = checkForPrefix pref idStr
 
 
+stripWhiteSpace :: [Inline] -> [Inline]
+stripWhiteSpace inls = poststrip (prestrip inls)
+    where isWS x = case x of
+            Space -> True
+            LineBreak -> True
+            SoftBreak -> True
+            _ -> False
+          prestrip [] = []
+          prestrip xs@(x:xs')
+            | isWS x = prestrip xs'
+            | otherwise = xs
+          poststrip = reverse . prestrip . reverse
+
+
 -- | Look for a table ID in the caption (a 'Str' of the form "{#tbl:...}"),
 -- strip it if necessary, and return the new caption together
 -- with the identifier (if found)
 -- We only track the first output, but all ID-like inlines will be stripped regardless.
 findTableIdInCaption :: Caption -> Writer (Maybe Identifier) Caption
-findTableIdInCaption = walkCaptionM findInInlines
+findTableIdInCaption = walkCaptionM findInInlines 
+                        >=> walkCaptionM (return . stripWhiteSpace)
     where --findInInlines scans (and possibly modifies) a list of inlines
           findInInlines inls = traverse lookIn inls >>= return . catMaybes
           --lookIn inspects a single inline to check whether it looks like a table ID
