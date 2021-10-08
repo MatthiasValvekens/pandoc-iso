@@ -94,6 +94,9 @@ findTableIdInCaption = walkCaptionM findInInlines
             checkForPrefix "tbl" stripped
 
 
+setId :: T.Text -> Attr -> Attr
+setId newId (_, cls, kvals) = (newId, cls, kvals)
+
 
 data RefError = LevelSkipped (Maybe ClauseNum) 
               | NoClause Identifier
@@ -202,11 +205,14 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
         tb' <- traverse (walkTableBodyM $ return . stripSoftBreaks) tb
         -- next, process the caption
         let (cleanedCapt, maybeTableId) = runWriter findTableId
-        tblCapt' <- case maybeTableId of
-            Nothing -> return tblCapt -- nothing to do
+        (tableId, tblCapt') <- case maybeTableId of
+            Nothing -> return ("", tblCapt) -- nothing to do
             -- register the table and update the caption
-            Just tableId -> registerTable tableId cleanedCapt
-        return (Table attrs tblCapt' cs th tb' tf)
+            Just id' -> (\x -> (id',x)) <$> registerTable id' cleanedCapt
+        let attrs' = setId tableId attrs
+        -- wrap the table in a Div, to make sure that Pandoc generates
+        -- a bookmark for us
+        return $ Div attrs' [Table ("", [], []) tblCapt' cs th tb' tf]
     where registerTable tableId capt = do
             -- retrieve current clause (throw error if not in a clause)
             cls <- use currentClause >>= errIfNothing (NoClause tableId)
