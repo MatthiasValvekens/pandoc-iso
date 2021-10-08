@@ -8,9 +8,13 @@ Things it does:
  - Table numbering & references/links
  - Automatic note numbering
 
+Docx-specific things that I merged in from Leonard's Lua filter:
 
-So far there are no DOCX-specific features, I'm still using Leonard's Lua filter (with table handling commented out for now) for those.
+ - Inserting a ToC placeholder
+ - Page breaks
+ - Metadata rearranging
 
+I didn't adopt the figure handler yet.
 
 Things I plan to sort out, in no particular order:
 
@@ -24,6 +28,8 @@ Things I plan to sort out, in no particular order:
 Install Haskell's `stack` toolchain (which is easy to install, but quite beefy) and run `stack install` in the root directory. The first run will take a while (~10 minutes or so), since `stack` has to download and set up a Haskell runtime environment and compile a bunch of libraries, but subsequent runs will be much faster.
 
 This should drop a `pandoc-iso` executable somewhere in a (platform-dependent) canonical location. Said executable is a standard Pandoc JSON filter.
+
+Tested/used with Pandoc 2.14.0.2 on my end.
 
 # Usage
 
