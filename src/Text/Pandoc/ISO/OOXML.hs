@@ -41,8 +41,12 @@ ooxmlDirtyToc = ooxmlBlock $ "<w:sdt>\
 ooxmlPageBreak :: Block
 ooxmlPageBreak = ooxmlBlock "<w:p><w:r><w:br w:type=\"page\" /></w:r></w:p>"
 
+ooxmlEmptyPara :: Block
+ooxmlEmptyPara = ooxmlBlock "<w:p />"
+
 
 expandOOXMLMacro :: T.Text -> Maybe Block
 expandOOXMLMacro "\\newpage" = Just ooxmlPageBreak
 expandOOXMLMacro "\\toc" = Just ooxmlDirtyToc
+expandOOXMLMacro "\\emptypar" = Just ooxmlEmptyPara
 expandOOXMLMacro _ = Nothing
