@@ -195,14 +195,18 @@ processBlock (DefinitionList tnds) = do
             where termNum' = Str $ prefix <> "." <> (T.pack $ show termNum)
           withNums = zip [(1 :: Int)..]
 
-processBlock blk@(Table attrs tblCapt cs th tb tf) = do
+processBlock (Table attrs tblCapt cs th tb tf) = do
+        -- Pandoc's Markdown grid table reader tends to put in a lot
+        -- of spurious soft breaks. This logic replaces those with regular spaces.
+        -- (Resaving the resulting Docx in Word has the same effect, as it happens)
+        tb' <- traverse (walkTableBodyM $ return . stripSoftBreaks) tb
+        -- next, process the caption
         let (cleanedCapt, maybeTableId) = runWriter findTableId
-        case maybeTableId of
-            Nothing -> return blk -- nothing to do
+        tblCapt' <- case maybeTableId of
+            Nothing -> return tblCapt -- nothing to do
             -- register the table and update the caption
-            Just tableId -> do
-                updatedCapt <- registerTable tableId cleanedCapt
-                return (Table attrs updatedCapt cs th tb tf)
+            Just tableId -> registerTable tableId cleanedCapt
+        return (Table attrs tblCapt' cs th tb' tf)
     where registerTable tableId capt = do
             -- retrieve current clause (throw error if not in a clause)
             cls <- use currentClause >>= errIfNothing (NoClause tableId)
@@ -212,6 +216,10 @@ processBlock blk@(Table attrs tblCapt cs th tb tf) = do
             let tblInfo = Captioned curTblNum newCapt tableId cls
             currentRefs . tableRefs . at tableId .= Just tblInfo
             return newCapt
+
+          stripSoftBreaks [] = []
+          stripSoftBreaks (SoftBreak:xs) = Space:stripSoftBreaks xs
+          stripSoftBreaks (x:xs) = x:stripSoftBreaks xs
           
           findTableId = case extractIdWithPrefix "tbl" attrs of
                 Nothing -> findTableIdInCaption tblCapt
