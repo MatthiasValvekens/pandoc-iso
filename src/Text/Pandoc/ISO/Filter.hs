@@ -2,7 +2,8 @@
 
 module Text.Pandoc.ISO.Filter
     ( handleInternalRefs, RefError (..)
-    , handleStyles )
+    , handleStyles 
+    , rearrangeMeta )
     where
 
 import Data.Maybe (isJust, isNothing, catMaybes, fromMaybe)
@@ -14,6 +15,7 @@ import Text.Pandoc.Walk
 
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Map.Strict as M
 
 import Control.Monad.Writer.Lazy
 import Control.Monad.State.Lazy
@@ -392,3 +394,14 @@ handleStyles = walkPandocM (return . blockSub)
             where attrs' = handleStyles' docxDivStyles attrs
           blockSub x = x
 
+
+-- Pandoc's Docx writer inserts title/author/... into the actual document content, which
+-- is undesirable. We rename the relevant meta entries here.
+-- This unfortunately means that the associated docProps are also wrong, but that's something
+-- we'll have to live with
+rearrangeMeta :: [T.Text] -> Meta -> Meta
+rearrangeMeta entries (Meta meta) = Meta $ foldr modEntry meta entries
+    where modEntry k mp = case M.lookup k mp of
+            Nothing -> mp
+            -- let's not try to be clever with alterF to do the lookup/delete in one go
+            Just v -> M.delete k (M.insert (k <> "-meta") v mp)

@@ -14,6 +14,7 @@ dependencies:
 - text >= 1.2.4.1
 - pandoc-types >= 1.22
 - lens >= 4.9 && <5
+- containers >= 0.6.2.1
 
 library:
   source-dirs: src
