@@ -23,7 +23,7 @@ import Control.Monad.Except
 import Control.Lens
 
 import Text.Pandoc.ISO.Types
-import Text.Pandoc.ISO.OOXML (expandOOXMLMacro)
+import Text.Pandoc.ISO.OOXML (expandOOXMLMacro, ooxmlInline)
 
 
 
@@ -243,8 +243,7 @@ processBlock blk@(Div (divId', classes, kvals) blks)
     | "normref" `elem` classes = registerNormativeReference
     | "ed-note" `elem` classes = prependEdNote
     | otherwise = return blk
-    where colon = [Str ":", Space]
-          registerNoteLike noteLikeType = do
+    where registerNoteLike noteLikeType = do
                 num <- uses inClause ((+1) . length)
                 curClause <- uses currentClause clauseNumToIdent 
                 -- derive an ID if none exists yet
@@ -269,12 +268,13 @@ processBlock blk@(Div (divId', classes, kvals) blks)
                                     -- so it won't be seen by any other filters
                                     , citationNoteNum = num
                                     , citationHash = 0 }
-                let newBlks = prependToBlocks [Cite [cite] []] colon blks
+                let newBlks = prependToBlocks [Cite [cite] []] tabSep blks
                 return $ Div (divId, classes, kvals) newBlks
             where idPref = identifierPrefix noteLikeType
                   -- necessary to prevent the monomorphism restriction (?) from kicking in
                   inClause :: Lens' RefBuildingState [Identifier]
                   inClause = identifiersInClause noteLikeType
+                  tabSep = [Space, ooxmlInline "<w:r><w:tab/></w:r>"]
           findAttr key = fmap snd . find (\attr -> fst attr == key)
           registerNormativeReference = do
             -- check for 'nrm:' prefix
@@ -290,7 +290,7 @@ processBlock blk@(Div (divId', classes, kvals) blks)
             currentRefs . normRefs . at divId' .= Just (BibRefInfo divId' [Str dispLabel])
             return blk
           prependEdNote = return $ Div (divId', classes, kvals) newBlks
-            where newBlks = prependToBlocks [Str edNotePrefix] colon blks
+            where newBlks = prependToBlocks [Str edNotePrefix] [Str ":", Space] blks
 
 processBlock blk@(RawBlock (Format "tex") macro) 
     -- Make sure the next Header is treated as an annex start
