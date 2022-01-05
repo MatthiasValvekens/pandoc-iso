@@ -390,8 +390,9 @@ handleInternalRefs doc = do
 docxDivStyles :: HM.HashMap T.Text T.Text
 docxDivStyles = HM.fromList
     [ ("note", "Note")
-    , ("example", "Note")
-    , ("note-to-entry", "Note") -- TODO: implement auto-numbering for these
+    , ("example", "Example")
+      -- TODO: implement auto-numbering for these
+    , ("note-to-entry", "Note to entry")
     , ("ed-note", "Editors Note") ]
 
 -- use the first class that makes sense as a word style
