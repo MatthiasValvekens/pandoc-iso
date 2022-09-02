@@ -27,9 +27,13 @@ Things I plan to sort out, in no particular order:
 
 Install Haskell's `stack` toolchain (which is easy to install, but quite beefy) and run `stack install` in the root directory. The first run will take a while (~10 minutes or so), since `stack` has to download and set up a Haskell runtime environment and compile a bunch of libraries, but subsequent runs will be much faster.
 
+The `pandoc-iso` filter does not link against Pandoc itself, it's a standalone executable that only relies on the AST manipulation API in `pandoc-types`.
+
 This should drop a `pandoc-iso` executable somewhere in a (platform-dependent) canonical location. Said executable is a standard Pandoc JSON filter.
 
-Tested/used with Pandoc 2.14.0.2 on my end.
+Tested/used with Pandoc 2.14.0.2 and Pandoc 2.19.2. For Pandoc versions that support `native_numbering`, make sure to disable that extension in the output settings (that should be the default).
+
+Note: Avoid Pandoc 2.14.1. For those Pandoc versions, disabling `native_numbering` does not disable Pandoc's internal table and figure numbering feature, which interferes with `pandoc-iso`.
 
 # Usage
 
