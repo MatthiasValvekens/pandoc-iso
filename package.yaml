@@ -31,15 +31,3 @@ executables:
     source-dirs: app
     ghc-options:
       - -Wall
-
-tests:
-  pandoc-iso-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - pandoc-iso
-    - HUnit
