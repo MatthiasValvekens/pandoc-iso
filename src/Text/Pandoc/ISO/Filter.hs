@@ -6,8 +6,10 @@ module Text.Pandoc.ISO.Filter
     processMacros,
     handleStyles,
     rearrangeMeta,
+    fixTableFormatting,
     RefError (..),
     OOXMLMacroError (..),
+    TableReformatFailure (..),
   )
 where
 
@@ -26,6 +28,9 @@ import Text.Pandoc.Definition
 import Text.Pandoc.ISO.OOXML
 import Text.Pandoc.ISO.Types
 import Text.Pandoc.Walk
+
+noAttrs :: Attr
+noAttrs = ("", [], [])
 
 inlineToDiv :: Attr -> Inline -> Block
 inlineToDiv attr content = inlinesToDiv attr [content]
@@ -222,11 +227,11 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
   let tableId = fromMaybe "" maybeTableId
   -- register the table to track numbering
   captionStyle <- registerTable tableId cleanedCapt
-  let captionBlock = inlinesToDiv (tableId, [], [("custom-style", captionStyle)]) (inline cleanedCapt)
-  return $
-    Div
-      ("", [], [])
-      [captionBlock, Table ("", [], []) (Caption Nothing []) cs th tb' tf]
+  -- TODO clean this up (works well enough for "reasonable" captions, though)
+  let inlinedCaption = inline cleanedCapt
+  let captionBlock = inlinesToDiv (tableId, [], [("custom-style", captionStyle)]) inlinedCaption
+  let tbl = Table noAttrs (Caption (Just inlinedCaption) []) cs th tb' tf
+  return $ Div noAttrs [captionBlock, tbl]
   where
     registerTable tableId capt = do
       -- retrieve current clause (throw error if not in a clause)
@@ -239,6 +244,7 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
       curTblNum <- lastTable <+= 1
       -- ...but only register the ID if the source specified one
       when (tableId /= "") $ do
+        -- FIXME ensure that the numbering is correct for references to tables in annexes
         let tblInfo = Captioned "Table" curTblNum capt tableId cls
         currentRefs . tableRefs . at tableId .= Just tblInfo
       return style
@@ -461,3 +467,19 @@ processMacrosInBlock blk = return blk
 
 processMacros :: Monad m => Pandoc -> ExceptT OOXMLMacroError m Pandoc
 processMacros doc@(Pandoc meta _) = runReaderT (walkPandocM processMacrosInBlock doc) meta
+
+
+data TableReformatFailure = Unsimplifiable Block | MacroError OOXMLMacroError deriving Show
+
+fixTableFormatting :: Monad m => Pandoc -> m (Pandoc, [TableReformatFailure])
+fixTableFormatting doc = runWriterT (walkPandocM fixTable doc)
+  where
+    fixTable blk = do
+      res <- runExceptT (fixTable' blk)
+      case res of
+        Left err -> tell [err] >> return blk
+        Right fmt -> return fmt
+    fixTable' tbl@(Table _ _ _ _ _ _) = case trySimplifyTable tbl of
+      Just tbl' -> Div noAttrs <$> withExceptT MacroError (formatSimpleTable tbl')
+      Nothing -> throwError $ Unsimplifiable tbl
+    fixTable' blk = return blk

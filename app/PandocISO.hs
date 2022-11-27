@@ -8,31 +8,77 @@ import Text.Pandoc.JSON
 
 handleRefsWithErrors :: Pandoc -> IO Pandoc
 handleRefsWithErrors doc = do
-  refHandlingResult <- runExceptT $ handleInternalRefs doc
-  withRefs <- case refHandlingResult of
-    Left err -> refErrh err
-    Right (newDoc, undefinedRefs) -> do
-      mapM_ printWarning undefinedRefs
-      return newDoc
-  macroResult <- runExceptT $ processMacros withRefs
-  macrosApplied <- case macroResult of
-    Left err -> macroErrh err
-    Right newDoc -> return newDoc
-  handleStyles (fixMeta macrosApplied)
+  withRefs <- runWithErrAndWarningH refErrh (mapM_ refWarning) handleInternalRefs doc
+  withTablesFormatted <- runWithWarningH (mapM_ tableWarning) fixTableFormatting withRefs
+  withMacrosApplied <- runWithErrH macroErrh processMacros withTablesFormatted
+  handleStyles (fixMeta withMacrosApplied)
   where
-    printWarning undefRef = hPutStrLn stderr warningStr
+    tableWarning (Unsimplifiable tbl) = hPutStrLn stderr warningStr
+      where
+        warningStr = "[Warning] Table tbl was too complex to be set in ISO template " ++ show tbl
+    tableWarning (MacroError err) = hPutStrLn stderr warningStr
+      where
+        warningStr = "[Warning] Templating error while formatting table: " ++ show err
+    refWarning undefRef = hPutStrLn stderr warningStr
       where
         warningStr = "[Warning] Undefined reference: " ++ T.unpack undefRef
-    refErrh err = hPutStrLn stderr errStr >> return doc
+    refErrh err = hPutStrLn stderr errStr
       where
         -- TODO improve messages
         errStr = "[Error] Reference detection failure: " ++ show err
-    macroErrh err = hPutStrLn stderr errStr >> return doc
+    macroErrh err = hPutStrLn stderr errStr
       where
         -- TODO improve messages
         errStr = "[Error] Macro expansion failure: " ++ show err
     fixMeta (Pandoc meta blks) =
       Pandoc (rearrangeMeta ["author", "title", "date"] meta) blks
+
+
+runWithErrH' ::
+  Monad m =>
+  (e -> m ()) ->
+  (Pandoc -> ExceptT e m a) ->
+  (a -> m Pandoc) ->
+  Pandoc ->
+  m Pandoc
+runWithErrH' errh action postAction theDoc = do
+  actionResult <- runExceptT (action theDoc)
+  case actionResult of
+    Left err -> errh err >> return theDoc
+    Right result -> postAction result
+
+
+runWithErrH ::
+  Monad m =>
+  (e -> m ()) ->
+  (Pandoc -> ExceptT e m Pandoc) ->
+  Pandoc ->
+  m Pandoc
+runWithErrH errh action = runWithErrH' errh action return
+
+
+runWithErrAndWarningH ::
+  Monad m =>
+  (e -> m ()) ->
+  (w -> m ()) ->
+  (Pandoc -> ExceptT e m (Pandoc, w)) ->
+  Pandoc ->
+  m Pandoc
+runWithErrAndWarningH errh warnh action = runWithErrH' errh action warnh'
+  where warnh' (newDoc, w) = warnh w >> return newDoc
+
+
+runWithWarningH ::
+  Monad m =>
+  (w -> m ()) ->
+  (Pandoc -> m (Pandoc, w)) ->
+  Pandoc ->
+  m Pandoc
+runWithWarningH warnh action doc = do
+    (newDoc, w) <- action doc
+    warnh w
+    return newDoc
+
 
 main :: IO ()
 main = toJSONFilter handleRefsWithErrors
