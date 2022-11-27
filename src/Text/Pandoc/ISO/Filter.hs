@@ -28,6 +28,13 @@ import Text.Pandoc.ISO.OOXML (OOXMLMacroError (..), expandOOXMLMacro, ooxmlInlin
 import Text.Pandoc.ISO.Types
 import Text.Pandoc.Walk
 
+
+inlineToDiv :: Attr -> Inline -> Block
+inlineToDiv attr content = inlinesToDiv attr [content]
+
+inlinesToDiv :: Attr -> [Inline] -> Block
+inlinesToDiv attr content = Div attr [Para content]
+
 -- | Extract the classifier prefix of a (block's) identifier, if present.
 -- Examples: 'sec', 'tbl', 'fig', 'eqn'...
 extractClassifierPrefix :: Identifier -> Maybe T.Text
@@ -191,16 +198,23 @@ processBlock blk@(Header lvl attrs headerText) = do
       currentRefs . clauseRefs . at clauseId .= Just clauseInfo
 
 -- Number T&D's within the clause in which they appear
--- (As of now these aren't referenceable at the AST level, we just provide the numbers
--- because ISO wants us to)
+-- (note: the numbering is not fed back into the reference resolver)
+-- We also redo them as a more primitive structure since Pandoc's definitionList is not
+-- compatible with the ISO template
 processBlock (DefinitionList tnds) = do
   cls <- use currentClause
   let numberTerm = addNum (maybe "" clauseNumText cls)
-  return (DefinitionList $ uncurry numberTerm <$> withNums tnds)
+  return $ Div ("", [], []) $ do
+    (termNum, (term, defs)) <- withNums tnds
+    numberTerm termNum term defs
   where
-    addNum prefix termNum (term, defs) = (termNum' : LineBreak : term, defs)
+    addNum :: T.Text -> Int -> [Inline] -> [[Block]] -> [Block]
+    addNum prefix termNum term defs = termNum' : termContainer term : defContainer defs
       where
-        termNum' = Str $ prefix <> "." <> T.pack (show termNum)
+        termNumContainer = inlineToDiv ("", [], [("custom-style", "TermNum")])
+        termContainer = inlinesToDiv ("", [], [("custom-style", "Term(s)")])
+        defContainer = fmap (Div ("", [], [("custom-style", "Definition")]))
+        termNum' = termNumContainer $ Str $ prefix <> "." <> T.pack (show termNum)
     withNums = zip [(1 :: Int) ..]
 processBlock (Table attrs tblCapt cs th tb tf) = do
   -- Pandoc's Markdown grid table reader tends to put in a lot
