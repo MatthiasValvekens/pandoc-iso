@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
 
 module Text.Pandoc.ISO.Filter
   ( handleInternalRefs,
@@ -24,10 +23,9 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing)
 import qualified Data.Text as T
 import Text.Pandoc.Definition
-import Text.Pandoc.ISO.OOXML (OOXMLMacroError (..), expandOOXMLMacro, ooxmlInline)
+import Text.Pandoc.ISO.OOXML
 import Text.Pandoc.ISO.Types
 import Text.Pandoc.Walk
-
 
 inlineToDiv :: Attr -> Inline -> Block
 inlineToDiv attr content = inlinesToDiv attr [content]
@@ -99,9 +97,6 @@ findTableIdInCaption =
       (stripped, lstChar) <- T.unsnoc rest'
       guard $ lstChar == '}'
       checkForPrefix "tbl" stripped
-
-setId :: T.Text -> Attr -> Attr
-setId newId (_, cls, kvals) = (newId, cls, kvals)
 
 data RefError
   = LevelSkipped (Maybe ClauseNum)
@@ -204,9 +199,10 @@ processBlock blk@(Header lvl attrs headerText) = do
 processBlock (DefinitionList tnds) = do
   cls <- use currentClause
   let numberTerm = addNum (maybe "" clauseNumText cls)
-  return $ Div ("", [], []) $ do
-    (termNum, (term, defs)) <- withNums tnds
-    numberTerm termNum term defs
+  return $
+    Div ("", [], []) $ do
+      (termNum, (term, defs)) <- withNums tnds
+      numberTerm termNum term defs
   where
     addNum :: T.Text -> Int -> [Inline] -> [[Block]] -> [Block]
     addNum prefix termNum term defs = termNum' : termContainer term : defContainer defs
@@ -223,24 +219,30 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
   tb' <- traverse (walkTableBodyM $ return . stripSoftBreaks) tb
   -- next, process the caption
   let (cleanedCapt, maybeTableId) = runWriter findTableId
-  (tableId, tblCapt') <- case maybeTableId of
-    Nothing -> return ("", tblCapt) -- nothing to do
-    -- register the table and update the caption
-    Just id' -> (id',) <$> registerTable id' cleanedCapt
-  let attrs' = setId tableId attrs
-  -- wrap the table in a Div, to make sure that Pandoc generates
-  -- a bookmark for us
-  return $ Div attrs' [Table ("", [], []) tblCapt' cs th tb' tf]
+  let tableId = fromMaybe "" maybeTableId
+  -- register the table to track numbering
+  captionStyle <- registerTable tableId cleanedCapt
+  return $
+    Div
+      ("", [], [])
+      [ inlinesToDiv (tableId, [], [("custom-style", captionStyle)]) (inline cleanedCapt),
+        Table ("", [], []) (Caption Nothing []) cs th tb' tf
+      ]
   where
     registerTable tableId capt = do
       -- retrieve current clause (throw error if not in a clause)
       cls <- use currentClause >>= errIfNothing (NoClause tableId)
+      let style =
+            if isAnnex cls
+              then ("Annex Table Title" :: T.Text)
+              else ("Table Title" :: T.Text)
       -- increment table num & retrieve the result
       curTblNum <- lastTable <+= 1
-      let newCapt = prependNum curTblNum capt
-      let tblInfo = Captioned curTblNum newCapt tableId cls
-      currentRefs . tableRefs . at tableId .= Just tblInfo
-      return newCapt
+      -- ...but only register the ID if the source specified one
+      when (tableId /= "") $ do
+        let tblInfo = Captioned "Table" curTblNum capt tableId cls
+        currentRefs . tableRefs . at tableId .= Just tblInfo
+      return style
 
     stripSoftBreaks [] = []
     stripSoftBreaks (SoftBreak : xs) = Space : stripSoftBreaks xs
@@ -249,13 +251,6 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
     findTableId = case extractIdWithPrefix "tbl" attrs of
       Nothing -> findTableIdInCaption tblCapt
       Just x -> tell (Just x) >> return tblCapt
-    -- Prepend "Table xx --- " to the table caption
-    prependNum num (Caption sh long) = Caption (fmap (tabStr ++) sh) long'
-      where
-        tabStr' = Str $ "Table " <> T.pack (show num)
-        emdash = [Space, Str "—", Space]
-        tabStr = tabStr' : emdash
-        long' = prependToBlocks [tabStr'] emdash long
 processBlock blk@(Div (divId', classes, kvals) blks)
   | "note" `elem` classes = registerNoteLike ISONote
   | "example" `elem` classes = registerNoteLike ISOExample

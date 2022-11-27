@@ -112,24 +112,30 @@ instance Inlinable BibRefInfo where
   inline = bibDispLabel
 
 data Captioned = Captioned
-  { captionedNum :: Int,
+  { captionPrefix :: T.Text,
+    captionedNum :: Int,
     caption :: Caption,
     captionedLabel :: Identifier,
     captionedInClause :: ClauseNum
   }
   deriving (Show)
 
+instance Inlinable Caption where
+  -- Use short caption if available
+  inline (Caption (Just shortCaption) _) = shortCaption
+  -- Attempt to concat paras and plains
+  -- (best effort basis)
+  inline (Caption _ blocks) = concatMap grabInlines blocks
+    where
+      grabInlines (Plain inls) = inls
+      grabInlines (Para inls) = inls
+      grabInlines _ = []
+
 instance Inlinable Captioned where
-  inline x = case caption x of
-    -- Use short caption if available
-    Caption (Just shortCaption) _ -> shortCaption
-    -- Attempt to concat paras and plains
-    -- (best effort basis)
-    Caption _ blocks -> concatMap grabInlines blocks
-      where
-        grabInlines (Plain inls) = inls
-        grabInlines (Para inls) = inls
-        grabInlines _ = []
+  inline c = designation ++ (Space : Str "—" : Space : inline (caption c))
+    where
+      designation = [Str (captionPrefix c), Space, Str numStr]
+      numStr = T.pack $ show (captionedNum c)
 
 type DocRefs = HM.HashMap Identifier
 
