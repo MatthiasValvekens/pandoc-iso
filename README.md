@@ -63,6 +63,8 @@ Putting `{#tbl:my-table}` in a table caption allows you to refer to it later usi
 
 Compatibility note: the syntax is the same as for `pandoc-tablenos`, so you can't use both in the same document.
 
+The filter assign the ISO template's table title style to the caption, so it will be auto-numbered. However, internal references to the table won't use Word's internal auto-numbering! The filter actually tracks table numbers separately, since the way the numbering scheme is defined in the ISO template makes it difficult to produce clean "native" internal refs (fortunately ISO doesn't require those). This way of doing things is a bit clumsy, so I might straighten it out in the future.
+
 ## Note auto-numbering
 
 All divs of class `.note` will be automatically rendered with `custom-style="Note"` and prefixed with `NOTE:` if they're the only note in their clause, or `NOTE <number>:` if there are multiple ones.

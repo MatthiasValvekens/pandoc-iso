@@ -222,12 +222,11 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
   let tableId = fromMaybe "" maybeTableId
   -- register the table to track numbering
   captionStyle <- registerTable tableId cleanedCapt
+  let captionBlock = inlinesToDiv (tableId, [], [("custom-style", captionStyle)]) (inline cleanedCapt)
   return $
     Div
       ("", [], [])
-      [ inlinesToDiv (tableId, [], [("custom-style", captionStyle)]) (inline cleanedCapt),
-        Table ("", [], []) (Caption Nothing []) cs th tb' tf
-      ]
+      [captionBlock, Table ("", [], []) (Caption Nothing []) cs th tb' tf]
   where
     registerTable tableId capt = do
       -- retrieve current clause (throw error if not in a clause)
