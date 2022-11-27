@@ -113,7 +113,7 @@ expandOOXMLMacro :: Monad m => T.Text -> ReaderT Meta (ExceptT OOXMLMacroError m
 expandOOXMLMacro "\\newpage" = return (Just ooxmlPageBreak)
 expandOOXMLMacro "\\toc" = return (Just ooxmlDirtyToc)
 expandOOXMLMacro "\\emptypar" = return (Just ooxmlEmptyPara)
-expandOOXMLMacro "\\isofrontmatter" = do
+expandOOXMLMacro "\\maketitle" = do
   vars <- populateFrontmatterVars
   lift $ Just <$> subVarsInTemplate ooxmlIsoFrontmatterTemplate vars
 expandOOXMLMacro _ = return Nothing
