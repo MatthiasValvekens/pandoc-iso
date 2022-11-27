@@ -23,8 +23,10 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base >=4.7 && <5
+      attoparsec
+    , base >=4.7 && <5
     , containers >=0.6.2.1
+    , file-embed >=0.0.15.0
     , hashable >=1.3
     , lens >=4.9 && <5
     , mtl >=2.2.2
@@ -41,8 +43,10 @@ executable pandoc-iso
       app
   ghc-options: -Wall
   build-depends:
-      base >=4.7 && <5
+      attoparsec
+    , base >=4.7 && <5
     , containers >=0.6.2.1
+    , file-embed >=0.0.15.0
     , hashable >=1.3
     , lens >=4.9 && <5
     , mtl >=2.2.2

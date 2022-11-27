@@ -15,6 +15,8 @@ dependencies:
 - pandoc-types >= 1.22
 - lens >= 4.9 && <5
 - containers >= 0.6.2.1
+- file-embed >= 0.0.15.0
+- attoparsec  # implicit dependencies through aeson, but we need it
 
 library:
   source-dirs: src

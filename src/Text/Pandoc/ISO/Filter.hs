@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
 
 module Text.Pandoc.ISO.Filter
-    ( handleInternalRefs, RefError (..)
+    ( handleInternalRefs
+    , processMacros
     , handleStyles 
-    , rearrangeMeta )
+    , rearrangeMeta
+    , RefError (..), OOXMLMacroError (..))
     where
 
 import Data.Maybe (isJust, isNothing, catMaybes, fromMaybe)
@@ -17,13 +19,14 @@ import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 
+import Control.Monad.Reader
 import Control.Monad.Writer.Lazy
 import Control.Monad.State.Lazy
 import Control.Monad.Except
 import Control.Lens
 
 import Text.Pandoc.ISO.Types
-import Text.Pandoc.ISO.OOXML (expandOOXMLMacro, ooxmlInline)
+import Text.Pandoc.ISO.OOXML (expandOOXMLMacro, ooxmlInline, OOXMLMacroError (..))
 
 
 
@@ -71,7 +74,7 @@ findTableIdInCaption :: Caption -> Writer (Maybe Identifier) Caption
 findTableIdInCaption = walkCaptionM findInInlines 
                         >=> walkCaptionM (return . stripWhiteSpace)
     where --findInInlines scans (and possibly modifies) a list of inlines
-          findInInlines inls = traverse lookIn inls >>= return . catMaybes
+          findInInlines inls = traverse lookIn inls <&> catMaybes
           --lookIn inspects a single inline to check whether it looks like a table ID
           lookIn inl@(Str txt) = case inspectText txt of
                 Nothing -> return (Just inl)
@@ -292,6 +295,11 @@ processBlock blk@(Div (divId', classes, kvals) blks)
           prependEdNote = return $ Div (divId', classes, kvals) newBlks
             where newBlks = prependToBlocks [Str edNotePrefix] [Str ":", Space] blks
 
+
+-- This is a hack: Pandoc uses "SourceCode" as the style for source code, while
+-- the ISO template uses "Code".
+processBlock (CodeBlock a content) = return $ Div ("", [], [("custom-style", "Code")]) [Para [Code a content]]
+
 processBlock blk@(RawBlock (Format "tex") macro) 
     -- Make sure the next Header is treated as an annex start
     -- (this is a bit of a hack, but it should be fine as long as no 
@@ -300,7 +308,7 @@ processBlock blk@(RawBlock (Format "tex") macro)
     | macro == "\\backmatter" = do
             currentClause .= Just (ClauseNum 0 [] True)
             return blk
-    | otherwise = return $ fromMaybe blk (expandOOXMLMacro macro)
+    | otherwise = return blk  -- the other macros are processed elsewhere
 
 processBlock x = return x
 
@@ -392,7 +400,8 @@ docxDivStyles = HM.fromList
     [ ("note", "Note")
     , ("example", "Example")
       -- TODO: implement auto-numbering for these
-    , ("note-to-entry", "Note to entry")
+      -- (ISO uses the same Note template for notes to entry as well)
+    , ("note-to-entry", "Note")
     , ("ed-note", "Editors Note") ]
 
 -- use the first class that makes sense as a word style
@@ -420,3 +429,14 @@ rearrangeMeta entries (Meta meta) = Meta $ foldr modEntry meta entries
             Nothing -> mp
             -- let's not try to be clever with alterF to do the lookup/delete in one go
             Just v -> M.delete k (M.insert (k <> "-meta") v mp)
+
+
+processMacrosInBlock :: Monad m => Block 
+                     -> ReaderT Meta (ExceptT OOXMLMacroError m) Block
+
+processMacrosInBlock blk@(RawBlock (Format "tex") macro) = fromMaybe blk <$> expandOOXMLMacro macro
+processMacrosInBlock blk = return blk
+
+
+processMacros :: Monad m => Pandoc -> ExceptT OOXMLMacroError m Pandoc
+processMacros doc@(Pandoc meta _) = runReaderT (walkPandocM processMacrosInBlock doc) meta
