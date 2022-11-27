@@ -426,6 +426,7 @@ docxDivStyles =
       -- TODO: implement auto-numbering for these
       -- (ISO uses the same Note template for notes to entry as well)
       ("note-to-entry", "Note"),
+      ("introtitle", "Intro Title"),
       ("ed-note", "Editors Note")
     ]
 

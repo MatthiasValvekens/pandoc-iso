@@ -120,6 +120,18 @@ expandOOXMLMacro :: Monad m => T.Text -> ReaderT Meta (ExceptT OOXMLMacroError m
 expandOOXMLMacro "\\newpage" = return (Just ooxmlPageBreak)
 expandOOXMLMacro "\\toc" = return (Just ooxmlDirtyToc)
 expandOOXMLMacro "\\emptypar" = return (Just ooxmlEmptyPara)
+expandOOXMLMacro "\\doctitle" = do
+  meta <- ask
+  case docTitle meta of
+    [] -> return Nothing
+    title -> return $ Just (Div attrs [Para title])
+      where attrs = ("", [], [("custom-style", "zzSTDTitle")])
+expandOOXMLMacro "\\makebibliography" = return (Just biblio)
+  where biblioTitle = Div titleAttrs [Para [Str "Bibliography"]]
+        biblioSection = Div sectAttrs []
+        biblio = Div ("", [], []) [biblioTitle, biblioSection]
+        titleAttrs = ("", [], [("custom-style", "Biblio Title")])
+        sectAttrs = ("refs", [], [("custom-style", "Bibliography")])
 expandOOXMLMacro "\\maketitle" = do
   vars <- populateFrontmatterVars
   lift $ Just <$> subVarsInTemplate ooxmlIsoFrontmatterTemplate vars
