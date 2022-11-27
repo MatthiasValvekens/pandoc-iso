@@ -32,20 +32,7 @@ ooxmlInline :: T.Text -> Inline
 ooxmlInline = RawInline (Format "openxml")
 
 ooxmlDirtyToc :: Block
-ooxmlDirtyToc =
-  ooxmlBlock
-    "<w:sdt>\
-    \    <w:sdtContent xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\
-    \        <w:p>\
-    \            <w:r>\
-    \                <w:fldChar w:fldCharType=\"begin\" w:dirty=\"true\" />\
-    \                <w:instrText xml:space=\"preserve\">TOC \\o \"1-2\" \\h \\z \\u</w:instrText>\
-    \                <w:fldChar w:fldCharType=\"separate\" />\
-    \                <w:fldChar w:fldCharType=\"end\" />\
-    \            </w:r>\
-    \        </w:p>\
-    \    </w:sdtContent>\
-    \</w:sdt>"
+ooxmlDirtyToc = ooxmlBlock $(embedStringFile "data/dirty-toc.ooxml")
 
 ooxmlPageBreak :: Block
 ooxmlPageBreak = ooxmlBlock "<w:p><w:r><w:br w:type=\"page\" /></w:r></w:p>"
