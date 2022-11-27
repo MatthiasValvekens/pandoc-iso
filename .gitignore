@@ -32,3 +32,4 @@ hasn1.cabal
 scratchpad
 .*history
 *.sw*
+out/
