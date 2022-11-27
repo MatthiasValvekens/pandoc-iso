@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Text.Pandoc.ISO.Filter
   ( handleInternalRefs,
@@ -137,9 +138,9 @@ fmtAnnex lvl (elId, elCls, kvals) headerText = Div (elId, elCls, kvals') content
     style
       | lvl == 1 = "ANNEX"
       | otherwise = T.pack ('a' : show lvl)
-    kvals' = (("custom-style", style) : kvals)
+    kvals' = ("custom-style", style) : kvals
     content'
-      | lvl == 1 = (LineBreak : Str annexType : LineBreak : LineBreak : headerText)
+      | lvl == 1 = LineBreak : Str annexType : LineBreak : LineBreak : headerText
       | otherwise = headerText
     content = [Para content']
     annexType
@@ -157,7 +158,7 @@ processBlock blk@(Header lvl attrs headerText) = do
   cls <- use currentClause
   let curLvl = maybe 0 clauseLevel cls
   newClause <-
-    currentClause <<~ case (curLvl - lvl) of
+    currentClause <<~ case curLvl - lvl of
       -- new level is 1 higher -> descend
       (-1) -> return $ Just (descendInto cls)
       -- level is <-1 or positive
@@ -178,7 +179,7 @@ processBlock blk@(Header lvl attrs headerText) = do
   -- if we're in the annexes, we need to emit something other than Header
   -- to get the styles right in the ISO template
   return $
-    if (maybe False isAnnex newClause)
+    if maybe False isAnnex newClause
       then fmtAnnex lvl attrs headerText
       else blk
   where
@@ -197,9 +198,9 @@ processBlock (DefinitionList tnds) = do
   let numberTerm = addNum (maybe "" clauseNumText cls)
   return (DefinitionList $ uncurry numberTerm <$> withNums tnds)
   where
-    addNum prefix termNum (term, defs) = ((termNum' : LineBreak : term), defs)
+    addNum prefix termNum (term, defs) = (termNum' : LineBreak : term, defs)
       where
-        termNum' = Str $ prefix <> "." <> (T.pack $ show termNum)
+        termNum' = Str $ prefix <> "." <> T.pack (show termNum)
     withNums = zip [(1 :: Int) ..]
 processBlock (Table attrs tblCapt cs th tb tf) = do
   -- Pandoc's Markdown grid table reader tends to put in a lot
@@ -211,7 +212,7 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
   (tableId, tblCapt') <- case maybeTableId of
     Nothing -> return ("", tblCapt) -- nothing to do
     -- register the table and update the caption
-    Just id' -> (\x -> (id', x)) <$> registerTable id' cleanedCapt
+    Just id' -> (id',) <$> registerTable id' cleanedCapt
   let attrs' = setId tableId attrs
   -- wrap the table in a Div, to make sure that Pandoc generates
   -- a bookmark for us
@@ -239,7 +240,7 @@ processBlock (Table attrs tblCapt cs th tb tf) = do
       where
         tabStr' = Str $ "Table " <> T.pack (show num)
         emdash = [Space, Str "—", Space]
-        tabStr = (tabStr' : emdash)
+        tabStr = tabStr' : emdash
         long' = prependToBlocks [tabStr'] emdash long
 processBlock blk@(Div (divId', classes, kvals) blks)
   | "note" `elem` classes = registerNoteLike ISONote
@@ -420,7 +421,7 @@ handleStyles' styles (elId, classes, kvals) = (elId, classes, newKvals)
   where
     asWordStyles = [HM.lookup cls styles | cls <- classes]
     newKvals = case msum asWordStyles of
-      Just style -> (("custom-style", style) : kvals)
+      Just style -> ("custom-style", style) : kvals
       Nothing -> kvals
 
 handleStyles :: Monad m => Pandoc -> m Pandoc

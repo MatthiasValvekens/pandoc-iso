@@ -23,9 +23,9 @@ type Identifier = T.Text
 prependToBlocks :: [Inline] -> [Inline] -> [Block] -> [Block]
 prependToBlocks toPrepend connector blks = case blks of
   [] -> [Plain toPrepend]
-  (Plain ins : bs) -> (Plain (connected ins) : bs)
-  (Para ins : bs) -> (Para (connected ins) : bs)
-  blocks -> (Plain toPrepend : blocks)
+  (Plain ins : bs) -> Plain (connected ins) : bs
+  (Para ins : bs) -> Para (connected ins) : bs
+  blocks -> Plain toPrepend : blocks
   where
     connected ins = toPrepend ++ connector ++ ins
 
@@ -47,7 +47,7 @@ descendInto parent = ClauseNum 1 tailPart annex
   where
     (tailPart, annex) = case parent of
       Nothing -> ([], False)
-      Just (ClauseNum x xs anx) -> ((x : xs), anx)
+      Just (ClauseNum x xs anx) -> (x : xs, anx)
 
 -- | Move to next clause at the same level
 nextClause :: ClauseNum -> ClauseNum
@@ -80,7 +80,7 @@ clauseNumToIdent :: Maybe ClauseNum -> Identifier
 clauseNumToIdent Nothing = "root"
 clauseNumToIdent (Just cls) = T.intercalate "-" nums
   where
-    nums = fmap (T.pack . show) $ clauseAsList cls
+    nums = T.pack . show <$> clauseAsList cls
 
 instance Show ClauseNum where
   show = T.unpack . clauseNumText
