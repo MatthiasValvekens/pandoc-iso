@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:p>
+    <w:pPr>
+      <w:pStyle w:val="Footer"/>
+      <w:spacing w:after="480" w:line="240" w:lineRule="atLeast"/>
+      <w:rPr>
+        <w:sz w:val="20"/>
+      </w:rPr>
+    </w:pPr>
+    <w:r>
+      <w:rPr>
+        <w:sz w:val="18"/>
+        <w:szCs w:val="18"/>
+      </w:rPr>
+      <w:t>© ISO #### – All rights reserved</w:t>
+    </w:r>
+    <w:r>
+      <w:rPr>
+        <w:sz w:val="20"/>
+      </w:rPr>
+      <w:tab/>
+    </w:r>
+    <w:r>
+      <w:fldChar w:fldCharType="begin"/>
+    </w:r>
+    <w:r>
+      <w:instrText xml:space="preserve"> PAGE   \* MERGEFORMAT </w:instrText>
+    </w:r>
+    <w:r>
+      <w:fldChar w:fldCharType="separate"/>
+    </w:r>
+    <w:r>
+      <w:rPr>
+        <w:noProof/>
+      </w:rPr>
+      <w:t>v</w:t>
+    </w:r>
+    <w:r>
+      <w:fldChar w:fldCharType="end"/>
+    </w:r>
+  </w:p>
+</w:ftr>

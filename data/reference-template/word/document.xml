@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:pPr>
+        <w:jc w:val="left"/>
+        <w:rPr>
+          <w:b/>
+          <w:sz w:val="28"/>
+          <w:szCs w:val="28"/>
+          <w:noProof/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:t>This is placeholder text.</w:t>
+      </w:r>
+    </w:p>
+    <!-- Must be preserved to prevent Pandoc from inserting a bogus empty w:sectPr node -->
+    <!-- WARNING: The rIds in this template have been carefully aligned to match Pandoc's ordering. -->
+    <!-- There's no guarantee that that ordering will remain the same! -->
+    <w:sectPr>
+      <!-- in the original template, the headers are carried over from the previous section. We explicitise that dependency here. -->
+      <w:headerReference w:type="even" r:id="rId10"/> <!-- header2.xml -->
+      <w:headerReference w:type="default" r:id="rId11"/> <!-- header3.xml -->
+      <w:footerReference w:type="even" r:id="rId16"/> <!-- footer5.xml -->
+      <w:footerReference w:type="default" r:id="rId17"/> <!-- footer6.xml -->
+      <w:type w:val="oddPage"/>
+      <w:pgSz w:w="11906" w:h="16838" w:code="9"/>
+      <w:pgMar w:top="794" w:right="737" w:bottom="284" w:left="851" w:header="709" w:footer="0" w:gutter="567"/>
+      <w:pgNumType w:start="1"/>
+      <w:cols w:space="720"/>
+    </w:sectPr>
+  </w:body>
+</w:document>
