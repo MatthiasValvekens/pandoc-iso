@@ -14,6 +14,7 @@ module Text.Pandoc.ISO.OOXML
     SimpleTable (..),
     trySimplifyTable,
     formatSimpleTable,
+    populateFrontmatterVars,
   )
 where
 

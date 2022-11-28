@@ -24,7 +24,24 @@
         <w:sz w:val="18"/>
         <w:szCs w:val="18"/>
       </w:rPr>
-      <w:t>© ISO #### – All rights reserved</w:t>
+      <w:t xml:space="preserve">© ISO </w:t>
+    </w:r>
+    <w:fldSimple w:instr="DOCPROPERTY draft-year \* MERGEFORMAT">
+      <w:r>
+        <w:rPr>
+          <w:sz w:val="18"/>
+          <w:szCs w:val="18"/>
+          <w:noProof/>
+        </w:rPr>
+        <w:t>####</w:t>
+      </w:r>
+    </w:fldSimple>
+    <w:r>
+      <w:rPr>
+        <w:sz w:val="18"/>
+        <w:szCs w:val="18"/>
+      </w:rPr>
+      <w:t xml:space="preserve"> – All rights reserved</w:t>
     </w:r>
   </w:p>
 </w:ftr>

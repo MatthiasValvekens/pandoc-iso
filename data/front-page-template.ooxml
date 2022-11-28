@@ -14,7 +14,7 @@
       <w:sz w:val="28" />
       <w:szCs w:val="28" />
     </w:rPr>
-    <w:t>ISO ${document-number}:${document-year}(X)</w:t>
+    <w:t>${document-ref}:${document-year}(X)</w:t>
   </w:r>
 </w:p>
 <w:p>

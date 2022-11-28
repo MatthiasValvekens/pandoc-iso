@@ -452,9 +452,12 @@ handleStyles = walkPandocM (return . blockSub)
 -- is undesirable. We rename the relevant meta entries here.
 -- This unfortunately means that the associated docProps are also wrong, but that's something
 -- we'll have to live with
+-- We also put the frontmatter vars into the meta
 rearrangeMeta :: [T.Text] -> Meta -> Meta
-rearrangeMeta entries (Meta meta) = Meta $ foldr modEntry meta entries
+rearrangeMeta entries m@(Meta meta) = Meta $ foldr modEntry meta' entries
   where
+    frontmatterVars = runReader populateFrontmatterVars m
+    meta' = foldr (\(k, v) -> M.insert k (MetaString v)) meta (HM.toList frontmatterVars)
     modEntry k mp = case M.lookup k mp of
       Nothing -> mp
       -- let's not try to be clever with alterF to do the lookup/delete in one go
