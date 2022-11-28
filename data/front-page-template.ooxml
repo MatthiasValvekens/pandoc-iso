@@ -207,13 +207,11 @@
     <w:spacing w:before="40" />
     <w:ind w:left="102" w:right="102" />
     <w:jc w:val="left" />
-    <w:rPr>
-      <w:color w:val="auto" />
-    </w:rPr>
   </w:pPr>
   <w:r>
     <w:rPr>
-      <w:color w:val="auto" />
+      <w:sz w:val="22" />
+      <w:szCs w:val="22" />
     </w:rPr>
     <w:lastRenderedPageBreak />
     <w:t>© ISO ${draft-year}</w:t>
@@ -232,16 +230,8 @@
     <w:autoSpaceDN w:val="0" />
     <w:adjustRightInd w:val="0" />
     <w:ind w:left="102" w:right="102" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
   </w:pPr>
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
     <w:t>All rights reserved. Unless otherwise specified, or required in the context of its implementation, no part of this publication may be reproduced or utilized otherwise in any form or by any means, electronic or mechanical, including photocopying, or posting on the internet or an intranet, without prior written permission. Permission can be requested from either ISO at the address below or ISO’s member body in the country of the requester.</w:t>
   </w:r>
 </w:p>
@@ -259,16 +249,8 @@
     <w:adjustRightInd w:val="0" />
     <w:spacing w:after="0" />
     <w:ind w:left="102" w:right="102" w:firstLine="403" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
   </w:pPr>
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
     <w:t>ISO copyright office</w:t>
   </w:r>
 </w:p>
@@ -286,47 +268,9 @@
     <w:adjustRightInd w:val="0" />
     <w:spacing w:after="0" />
     <w:ind w:left="102" w:right="102" w:firstLine="403" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
   </w:pPr>
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
-    <w:t>CP 401</w:t>
-  </w:r>
-  <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
-    <w:t xml:space="preserve"> • </w:t>
-  </w:r>
-  <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
-    <w:t xml:space="preserve">Ch. de </w:t>
-  </w:r>
-  <w:proofErr w:type="spellStart" />
-  <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
-    <w:t>Blandonnet</w:t>
-  </w:r>
-  <w:proofErr w:type="spellEnd" />
-  <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
-    <w:t xml:space="preserve"> 8</w:t>
+    <w:t>CP 401 • Ch. de Blandonnet 8</w:t>
   </w:r>
 </w:p>
 <w:p>
@@ -343,16 +287,8 @@
     <w:adjustRightInd w:val="0" />
     <w:spacing w:after="0" />
     <w:ind w:left="102" w:right="102" w:firstLine="403" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
   </w:pPr>
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-    </w:rPr>
     <w:t>CH-1214 Vernier, Geneva</w:t>
   </w:r>
 </w:p>
@@ -370,27 +306,9 @@
     <w:adjustRightInd w:val="0" />
     <w:spacing w:after="0" />
     <w:ind w:left="102" w:right="102" w:firstLine="403" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="en-GB" />
-    </w:rPr>
   </w:pPr>
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="en-GB" />
-    </w:rPr>
-    <w:t xml:space="preserve">Phone: </w:t>
-  </w:r>
-  <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="en-GB" />
-    </w:rPr>
-    <w:t>+41 22 749 01 11</w:t>
+    <w:t>Phone: +41 22 749 01 11</w:t>
   </w:r>
 </w:p>
 <w:p>
@@ -407,37 +325,9 @@
     <w:adjustRightInd w:val="0" />
     <w:spacing w:after="0" />
     <w:ind w:left="102" w:right="102" w:firstLine="403" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
   </w:pPr>
-  <w:proofErr w:type="gramStart" />
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
-    <w:t>Email</w:t>
-  </w:r>
-  <w:proofErr w:type="gramEnd" />
-  <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
-    <w:t xml:space="preserve">: </w:t>
-  </w:r>
-  <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
-    <w:t>copyright@iso.org</w:t>
+    <w:t>Email: copyright@iso.org</w:t>
   </w:r>
 </w:p>
 <w:p>
@@ -453,18 +343,8 @@
     <w:autoSpaceDN w:val="0" />
     <w:adjustRightInd w:val="0" />
     <w:ind w:left="102" w:right="102" w:firstLine="403" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
   </w:pPr>
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
     <w:t>Website: www.iso.org</w:t>
   </w:r>
 </w:p>
@@ -481,18 +361,8 @@
     <w:autoSpaceDN w:val="0" />
     <w:adjustRightInd w:val="0" />
     <w:ind w:left="102" w:right="102" />
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
   </w:pPr>
   <w:r>
-    <w:rPr>
-      <w:color w:val="auto" />
-      <w:sz w:val="20" />
-      <w:lang w:val="de-DE" />
-    </w:rPr>
     <w:t>Published in Switzerland</w:t>
   </w:r>
 </w:p>

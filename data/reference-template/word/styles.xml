@@ -910,10 +910,10 @@
     <w:semiHidden/>
     <w:pPr>
       <w:pBdr>
-        <w:top w:val="single" w:sz="4" w:space="1" w:color="0000FF"/>
-        <w:left w:val="single" w:sz="4" w:space="4" w:color="0000FF"/>
-        <w:bottom w:val="single" w:sz="4" w:space="1" w:color="0000FF"/>
-        <w:right w:val="single" w:sz="4" w:space="4" w:color="0000FF"/>
+        <w:top w:val="single" w:sz="4" w:space="1" w:color="auto"/>
+        <w:left w:val="single" w:sz="4" w:space="4" w:color="auto"/>
+        <w:bottom w:val="single" w:sz="4" w:space="1" w:color="auto"/>
+        <w:right w:val="single" w:sz="4" w:space="4" w:color="auto"/>
       </w:pBdr>
       <w:tabs>
         <w:tab w:val="left" w:pos="514"/>
@@ -922,7 +922,8 @@
       <w:ind w:left="284" w:right="284"/>
     </w:pPr>
     <w:rPr>
-      <w:color w:val="0000FF"/>
+      <w:color w:val="auto"/>
+      <w:sz w:val="20"/>
     </w:rPr>
   </w:style>
   <w:style w:type="paragraph" w:customStyle="1" w:styleId="zzSTDTitle">
