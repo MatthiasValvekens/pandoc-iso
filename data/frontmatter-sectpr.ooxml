@@ -3,9 +3,9 @@
     <w:sectPr>
       <!-- WARNING: tightly coupled with reference doc & pandoc implementation details!!!!! -->
       <w:headerReference w:type="even" r:id="rId10"/>
-      <w:headerReference w:type="odd" r:id="rId11"/>
-      <w:footerReference w:type="even" r:id="rId14"/>
-      <w:footerReference w:type="default" r:id="rId15"/>
+      <w:headerReference w:type="default" r:id="rId9"/>
+      <w:footerReference w:type="even" r:id="rId12"/>
+      <w:footerReference w:type="default" r:id="rId13"/>
       <w:pgSz w:w="11906" w:h="16838" w:code="9"/>
       <w:pgMar w:top="794" w:right="737" w:bottom="284" w:left="851" w:header="709" w:footer="0" w:gutter="567"/>
       <w:pgNumType w:fmt="lowerRoman"/>

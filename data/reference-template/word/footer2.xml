@@ -2,20 +2,27 @@
 <w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:p>
     <w:pPr>
-      <w:pStyle w:val="Header"/>
+      <w:pStyle w:val="Footer"/>
       <w:spacing w:before="360" w:after="480" w:line="240" w:lineRule="exact"/>
-      <w:jc w:val="right"/>
       <w:rPr>
-        <w:b w:val="0"/>
         <w:sz w:val="20"/>
-        <w:szCs w:val="20"/>
       </w:rPr>
     </w:pPr>
+    <w:fldSimple w:instr="PAGE   \* MERGEFORMAT">
+      <w:r>
+        <w:rPr>
+          <w:noProof/>
+        </w:rPr>
+        <w:t>ii</w:t>
+      </w:r>
+    </w:fldSimple>
+    <w:r>
+      <w:tab/>
+    </w:r>
     <w:r>
       <w:rPr>
-        <w:b w:val="0"/>
-        <w:sz w:val="20"/>
-        <w:szCs w:val="20"/>
+        <w:sz w:val="18"/>
+        <w:szCs w:val="18"/>
       </w:rPr>
       <w:t>© ISO #### – All rights reserved</w:t>
     </w:r>

@@ -5,33 +5,14 @@
       <w:pStyle w:val="Header"/>
       <w:spacing w:after="720" w:line="240" w:lineRule="exact"/>
       <w:jc w:val="left"/>
-      <w:rPr>
-        <w:sz w:val="24"/>
-        <w:szCs w:val="24"/>
-      </w:rPr>
     </w:pPr>
     <w:r>
       <w:rPr>
         <w:sz w:val="24"/>
         <w:szCs w:val="24"/>
+        <w:noProof/>
       </w:rPr>
-      <w:t>ISO #####-</w:t>
-    </w:r>
-    <w:proofErr w:type="gramStart"/>
-    <w:r>
-      <w:rPr>
-        <w:sz w:val="24"/>
-        <w:szCs w:val="24"/>
-      </w:rPr>
-      <w:t>#:#</w:t>
-    </w:r>
-    <w:proofErr w:type="gramEnd"/>
-    <w:r>
-      <w:rPr>
-        <w:sz w:val="24"/>
-        <w:szCs w:val="24"/>
-      </w:rPr>
-      <w:t>###(X)</w:t>
+      <w:t>ISO #####-#:####(X)</w:t>
     </w:r>
   </w:p>
 </w:hdr>

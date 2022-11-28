@@ -21,9 +21,9 @@
     <w:sectPr>
       <!-- in the original template, the headers are carried over from the previous section. We explicitise that dependency here. -->
       <w:headerReference w:type="even" r:id="rId10"/> <!-- header2.xml -->
-      <w:headerReference w:type="default" r:id="rId11"/> <!-- header3.xml -->
-      <w:footerReference w:type="even" r:id="rId16"/> <!-- footer5.xml -->
-      <w:footerReference w:type="default" r:id="rId17"/> <!-- footer6.xml -->
+      <w:headerReference w:type="default" r:id="rId9"/> <!-- header1.xml -->
+      <w:footerReference w:type="even" r:id="rId14"/> <!-- footer4.xml -->
+      <w:footerReference w:type="default" r:id="rId15"/> <!-- footer5.xml -->
       <w:type w:val="oddPage"/>
       <w:pgSz w:w="11906" w:h="16838" w:code="9"/>
       <w:pgMar w:top="794" w:right="737" w:bottom="284" w:left="851" w:header="709" w:footer="0" w:gutter="567"/>

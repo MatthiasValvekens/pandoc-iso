@@ -10,11 +10,9 @@
   <Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Id="rId8" Target="comments.xml"/>
   <Relationship Id="rId9" Target="header1.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header"/>
   <Relationship Id="rId10" Target="header2.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header"/>
-  <Relationship Id="rId11" Target="header3.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header"/>
-  <Relationship Id="rId12" Target="footer1.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
-  <Relationship Id="rId13" Target="footer2.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
-  <Relationship Id="rId14" Target="footer3.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
-  <Relationship Id="rId15" Target="footer4.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
-  <Relationship Id="rId16" Target="footer5.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
-  <Relationship Id="rId17" Target="footer6.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
+  <Relationship Id="rId11" Target="footer1.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
+  <Relationship Id="rId12" Target="footer2.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
+  <Relationship Id="rId13" Target="footer3.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
+  <Relationship Id="rId14" Target="footer4.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
+  <Relationship Id="rId15" Target="footer5.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"/>
 </Relationships>
