@@ -481,7 +481,7 @@ fixTableFormatting doc = runWriterT (walkPandocM fixTable doc)
       case res of
         Left err -> tell [err] >> return blk
         Right fmt -> return fmt
-    fixTable' tbl@(Table _ _ _ _ _ _) = case trySimplifyTable tbl of
+    fixTable' tbl@Table {} = case trySimplifyTable tbl of
       Just tbl' -> Div noAttrs <$> withExceptT MacroError (formatSimpleTable tbl')
       Nothing -> throwError $ Unsimplifiable tbl
     fixTable' blk = return blk
