@@ -69,8 +69,11 @@ subVarsInTemplate template vars = parsedTemplate >>= traverse resolveToken <&> T
       Left err -> throwError (SyntaxError err)
       Right result -> return result
 
-ooxmlIsoFrontmatterTemplate :: T.Text
-ooxmlIsoFrontmatterTemplate = $(embedStringFile "data/front-page-template.ooxml")
+ooxmlIsoFrontPageTemplate :: T.Text
+ooxmlIsoFrontPageTemplate = $(embedStringFile "data/front-page-template.ooxml")
+
+ooxmlIsoFrontmatterSectDelimBlock :: Block
+ooxmlIsoFrontmatterSectDelimBlock = ooxmlBlock $(embedStringFile "data/frontmatter-sectpr.ooxml")
 
 populateFrontmatterVars :: Monad m => ReaderT Meta m (HM.HashMap T.Text T.Text)
 populateFrontmatterVars = do
@@ -120,6 +123,7 @@ expandOOXMLMacro :: Monad m => T.Text -> ReaderT Meta (ExceptT OOXMLMacroError m
 expandOOXMLMacro "\\newpage" = return (Just ooxmlPageBreak)
 expandOOXMLMacro "\\toc" = return (Just ooxmlDirtyToc)
 expandOOXMLMacro "\\emptypar" = return (Just ooxmlEmptyPara)
+expandOOXMLMacro "\\mainmatter" = return (Just ooxmlIsoFrontmatterSectDelimBlock)
 expandOOXMLMacro "\\doctitle" = do
   meta <- ask
   case docTitle meta of
@@ -134,7 +138,7 @@ expandOOXMLMacro "\\makebibliography" = return (Just biblio)
         sectAttrs = ("refs", [], [("custom-style", "Bibliography")])
 expandOOXMLMacro "\\maketitle" = do
   vars <- populateFrontmatterVars
-  lift $ Just <$> subVarsInTemplate ooxmlIsoFrontmatterTemplate vars
+  lift $ Just <$> subVarsInTemplate ooxmlIsoFrontPageTemplate vars
 expandOOXMLMacro _ = return Nothing
 
 type SimpleCell = [Block]
