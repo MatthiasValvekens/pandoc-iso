@@ -41,8 +41,9 @@ All of these are up for discussion. Feel free to open issues as you see fit.
 
 ## Docker
 
-For ease of use, I've published the full conversion tool as a Docker image labelled `mfjval/pandoc-iso` (amd64 only for the time being).
-The `docker-compose.yml` file in this repository contains a sample invocation. Try it:
+For ease of use, I've published the full conversion tool [as a Docker image](https://hub.docker.com/r/mfjval/pandoc-iso)
+labelled `mfjval/pandoc-iso` (amd64 only for the time being). The `docker-compose.yml` file in this repository contains
+a sample invocation. Try it:
 
 ```bash
 touch sample.docx && chmod go+w sample.docx
