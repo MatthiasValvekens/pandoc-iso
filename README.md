@@ -36,7 +36,7 @@ All of these are up for discussion. Feel free to open issues as you see fit.
 
 # Build/install
 
-# Docker
+## Docker
 
 For ease of use, I've published the full conversion tool as a Docker image labelled `mfjval/pandoc-iso` (amd64 only for the time being).
 The `docker-compose.yml` file in this repository contains a sample invocation. Try it:
@@ -50,7 +50,7 @@ Take a look at the resulting `sample.docx` file that was generated from `sample.
 
 Note that the Docker image already includes Pandoc's reference document.
 
-# Standard build
+## Standard build
 
 Install Haskell's `stack` toolchain (which is easy to install, but quite beefy) and run `stack install` in the root directory. The first run will take a while (~10 minutes or so), since `stack` has to download and set up a Haskell runtime environment and compile a bunch of libraries, but subsequent runs will be much faster.
 
