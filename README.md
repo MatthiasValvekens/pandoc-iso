@@ -1,5 +1,8 @@
 # pandoc-iso
 
+![Docker Image Size (tag)](https://img.shields.io/docker/image-size/mfjval/pandoc-iso/latest)
+
+
 This is a Haskell Pandoc JSON filter to help authoring draft documents in ISO's special .docx template using
 lightweight Markdown files as input. The output should be compliant with the 2022 version of said template.
 
