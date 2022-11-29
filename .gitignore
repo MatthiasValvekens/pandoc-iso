@@ -33,3 +33,5 @@ scratchpad
 .*history
 *.sw*
 out/
+build/
+/sample.docx

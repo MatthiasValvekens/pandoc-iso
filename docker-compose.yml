@@ -1,0 +1,17 @@
+version: '3.7'
+services:
+  pandoc-iso:
+    image: mfjval/pandoc-iso
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+    - type: "bind"
+      source: "./sample.md"
+      target: "/inputs/sample.md"
+      read_only: true
+    - type: "bind"
+      source: "./sample.docx"
+      target: "/outputs/sample.docx"
+      read_only: false
+    command: "sample.md sample.docx"

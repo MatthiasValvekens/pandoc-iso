@@ -26,6 +26,20 @@ Things I plan to sort out, in no particular order:
 
 # Build/install
 
+# Docker
+
+For ease of use, I've published the full conversion tool as a Docker image labelled `mfjval/pandoc-iso` (amd64 only for the time being).
+The `docker-compose.yml` file in this repository contains a sample invocation. Try it:
+
+```bash
+touch sample.docx && chmod go+w sample.docx
+docker-compose run pandoc-iso
+```
+
+Take a look at the resulting `sample.docx` file.
+
+# Standard build
+
 Install Haskell's `stack` toolchain (which is easy to install, but quite beefy) and run `stack install` in the root directory. The first run will take a while (~10 minutes or so), since `stack` has to download and set up a Haskell runtime environment and compile a bunch of libraries, but subsequent runs will be much faster.
 
 The `pandoc-iso` filter does not link against Pandoc itself, it's a standalone executable that only relies on the AST manipulation API in `pandoc-types`.
@@ -125,3 +139,18 @@ OOXML inserts, but only for "simple" tables. That means the following:
  - No row/colspans
 
 This set of restrictions was workable for my own use; if you need anything extra, let me know.
+
+# Sample file
+
+After completing the build, try running this command in the repository root:
+
+```bash
+pandoc --filter=build/pandoc-iso \
+    --citeproc --csl=data/iso690-cite-with-label-en.csl \
+    --reference-doc data/reference.docx \
+    -f markdown-latex_macros -t docx \
+    --no-highlight \
+    -o sample.docx sample.md
+```
+
+This will compile `sample.md` into `sample.docx` with all bells and whistles enabled.
