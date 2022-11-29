@@ -71,7 +71,7 @@ The OOXML files in that directory are a mix of files extracted from the official
 (this mainly applies to the style defs and the numbering schemes), together with some carefully hand-crafted OOXML.
 The result is a minimal special-purpose document tailored for use with Pandoc.
 
-Note that the structure of the OOXML relies on certain Pandoc implementation details to work around certain limitations
+Note that the structure of the OOXML relies on Pandoc implementation details to work around certain limitations
 in the software. It is very likely that those will break if the reference document is resaved using GUI tools---don't do that.
 If you don't heed this warning, then more likely than not you will see some errors about unreadable data;
 these are recoverable but will probably mess up the headers and footers.
