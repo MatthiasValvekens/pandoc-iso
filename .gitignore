@@ -27,7 +27,6 @@ tags
 /etc/scripts/stack-scripts.cabal
 .hspec-failures
 better-cache/
-stack*.yaml.lock
 hasn1.cabal
 scratchpad
 .*history
