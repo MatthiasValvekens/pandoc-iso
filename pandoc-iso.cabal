@@ -1,11 +1,11 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 
 name:           pandoc-iso
-version:        0.1.0.0
+version:        0.2.0.0
 description:    Pandoc-based utils for ISO document formatting
 author:         Matthias Valvekens
 maintainer:     dev@mvalvekens.be
@@ -28,7 +28,7 @@ library
     , containers >=0.6.2.1
     , file-embed >=0.0.15.0
     , hashable >=1.3
-    , lens >=4.9 && <5
+    , lens ==5.*
     , mtl >=2.2.2
     , pandoc-types >=1.22
     , text >=1.2.4.1
@@ -48,7 +48,7 @@ executable pandoc-iso
     , containers >=0.6.2.1
     , file-embed >=0.0.15.0
     , hashable >=1.3
-    , lens >=4.9 && <5
+    , lens ==5.*
     , mtl >=2.2.2
     , pandoc-iso
     , pandoc-types >=1.22

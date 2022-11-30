@@ -1,5 +1,5 @@
 name:                pandoc-iso
-version:             0.1.0.0
+version:             0.2.0.0
 author:              "Matthias Valvekens"
 maintainer:          "dev@mvalvekens.be"
 copyright:           "2021 Matthias Valvekens"
@@ -13,7 +13,7 @@ dependencies:
 - mtl >= 2.2.2
 - text >= 1.2.4.1
 - pandoc-types >= 1.22
-- lens >= 4.9 && <5
+- lens >= 5 && <6
 - containers >= 0.6.2.1
 - file-embed >= 0.0.15.0
 - attoparsec  # implicit dependencies through aeson, but we need it
