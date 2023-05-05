@@ -1,6 +1,6 @@
 # Setup from
 # https://timwspence.github.io/blog/posts/2019-08-02-optimized-docker-builds-for-haskell-stack.html
-FROM haskell:9.2.5-slim as dependencies
+FROM haskell:9.2.7-slim as dependencies
 
 RUN mkdir /opt/build
 WORKDIR /opt/build
@@ -14,7 +14,7 @@ COPY stack.yaml package.yaml stack.yaml.lock /opt/build/
 RUN stack build --system-ghc --dependencies-only
 
 
-FROM haskell:9.2.5-slim as build
+FROM haskell:9.2.7-slim as build
 
 RUN apt-get update && apt-get install -y zip && rm -rf /var/lib/apt/lists/*
 

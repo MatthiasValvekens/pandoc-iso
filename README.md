@@ -1,8 +1,6 @@
 # pandoc-iso
 
 
-![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/mfjval/pandoc-iso)
-![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/mfjval/pandoc-iso)
 ![Docker Image Size (tag)](https://img.shields.io/docker/image-size/mfjval/pandoc-iso/latest)
 
 
