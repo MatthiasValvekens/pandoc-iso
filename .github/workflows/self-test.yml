@@ -1,0 +1,19 @@
+name: Run self-test
+on:
+  push: {}
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Invoke pandoc-iso
+        uses: MatthiasValvekens/pandoc-iso@master
+        with:
+          md-in: sample.md
+          docx-out: sample.docx
+      - name: Upload result
+        uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: sample.docx

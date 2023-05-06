@@ -1,0 +1,15 @@
+name: Compile ISO draft
+description: "Build an ISO .docx file from markdown input"
+inputs:
+  md-in:
+    description: "Markdown input file"
+    required: true
+  docx-out:
+    description: "Docx output file"
+    required: true
+runs:
+  using: docker
+  image: docker://ghcr.io/matthiasvalvekens/pandoc-iso:latest
+  args:
+    - ${{ inputs.md-in }}
+    - ${{ inputs.docx-out }}
