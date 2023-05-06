@@ -7,6 +7,9 @@ inputs:
   docx-out:
     description: "Docx output file"
     required: true
+branding:
+  icon: globe
+  color: blue
 runs:
   using: docker
   image: docker://ghcr.io/matthiasvalvekens/pandoc-iso:latest
