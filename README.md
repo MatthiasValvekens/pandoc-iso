@@ -43,7 +43,9 @@ All of these are up for discussion. Feel free to open issues as you see fit.
 ## Docker
 
 For ease of use, I've published the full conversion tool [as a Docker image](https://hub.docker.com/r/mfjval/pandoc-iso)
-labelled `mfjval/pandoc-iso` (amd64 only for the time being). The `docker-compose.yml` file in this repository contains
+labelled `mfjval/pandoc-iso` (amd64 only for the time being).
+It is also available as `ghcr.io/matthiasvalvekens/pandoc-iso` on the GitHub container registry.
+The `docker-compose.yml` file in this repository contains
 a sample invocation. Try it:
 
 ```bash
@@ -54,6 +56,37 @@ docker-compose run pandoc-iso
 Take a look at the resulting `sample.docx` file that was generated from `sample.md`.
 
 Note that the Docker image already includes Pandoc's reference document.
+
+## GitHub action
+
+This repository also defines a GitHub Action.
+
+```yaml
+name: Build drafts
+on:
+  push: {}
+jobs:
+  build-pdfmac:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Invoke pandoc-iso
+        # '@master' tracks the latest version.
+        # You can also use tagged releases, e.g. '@v1.0.1'
+        uses: MatthiasValvekens/pandoc-iso@master
+        with:
+          md-in: mydraft.md
+          docx-out: mydraft.docx
+      - name: Upload result
+        # This uploads the result as a workflow artifact,
+        # but you can of course do anything you want with the output file 
+        # here (e.g. automatically distributing it to committee members)
+        uses: actions/upload-artifact@v3
+        with:
+          name: docx-draft
+          path: mydraft.docx
+```
 
 ## Standard build
 
