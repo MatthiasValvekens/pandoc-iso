@@ -60,6 +60,7 @@ Note that the Docker image already includes Pandoc's reference document.
 ## GitHub action
 
 This repository also defines a GitHub Action.
+In order to use it, commit a YAML snippet like the following to the `.github/workflows` folder in your repository.
 
 ```yaml
 name: Build drafts
@@ -87,6 +88,9 @@ jobs:
           name: docx-draft
           path: mydraft.docx
 ```
+
+The `push: {}` trigger builds the draft on every push to the repository,
+but you can of course trigger builds on all sorts of repository events.
 
 ## Standard build
 
