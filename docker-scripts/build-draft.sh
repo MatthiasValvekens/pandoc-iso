@@ -7,8 +7,8 @@ if [ "$#" -ne 2 ]; then
 fi
 
 
-infile=/inputs/$1
-outfile=/outputs/$2
+infile=$1
+outfile=$2
 
 pandoc --filter=/usr/bin/pandoc-iso \
     --citeproc --csl=/var/pandoc/biblio.csl \

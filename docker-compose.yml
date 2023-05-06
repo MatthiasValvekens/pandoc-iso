@@ -8,10 +8,10 @@ services:
     volumes:
     - type: "bind"
       source: "./sample.md"
-      target: "/inputs/sample.md"
+      target: "/opt/data/sample.md"
       read_only: true
     - type: "bind"
       source: "./sample.docx"
-      target: "/outputs/sample.docx"
+      target: "/opt/data/sample.docx"
       read_only: false
     command: "sample.md sample.docx"
