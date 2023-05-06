@@ -14,8 +14,6 @@ jobs:
         uses: actions/checkout@v3
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.0.3
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Generate container metadata
@@ -44,7 +42,6 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.docker-meta.outputs.tags }}
           labels: ${{ steps.docker-meta.outputs.labels }}
           cache-to: type=gha,mode=max
