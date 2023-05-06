@@ -9,7 +9,7 @@ inputs:
     required: true
 runs:
   using: docker
-  image: docker://ghcr.io/matthiasvalvekens/pandoc-iso:latest
+  image: docker://ghcr.io/matthiasvalvekens/pandoc-iso:1.0.0
   args:
     - ${{ inputs.md-in }}
     - ${{ inputs.docx-out }}
